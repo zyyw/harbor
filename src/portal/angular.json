@@ -111,7 +111,7 @@
             "tsConfig": [
               "src/tsconfig.app.json",
               "src/tsconfig.spec.json",
-              "lib/src/tsconfig.json"
+              "lib/tsconfig.lib.json"
             ],
             "exclude": [
               "**/node_modules/**"
