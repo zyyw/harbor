@@ -121,7 +121,9 @@
             "REGISTRY": "Registries",
             "GROUP": "Groups",
             "REPLICATION": "Replicacións",
-            "CONFIG": "Configuración"
+            "CONFIG": "Configuración",
+            "DEVCENTER": "Developer Center",
+            "APIEXPLORER":"API Explorer"
         },
         "LOGS": "Logs"
     },

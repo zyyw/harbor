@@ -22,6 +22,7 @@ import { MemberGuard } from './shared/route/member-guard-activate.service';
 import { PageNotFoundComponent } from './shared/not-found/not-found.component';
 import { HarborShellComponent } from './base/harbor-shell/harbor-shell.component';
 import { ConfigurationComponent } from './config/config.component';
+import { DevCenterComponent } from './dev-center/dev-center.component';
 
 import { UserComponent } from './user/user.component';
 import { SignInComponent } from './account/sign-in/sign-in.component';
@@ -33,7 +34,6 @@ import { DestinationPageComponent } from './replication/destination/destination-
 import { ReplicationPageComponent } from './replication/replication-page.component';
 
 import { AuditLogComponent } from './log/audit-log.component';
-import { LogPageComponent } from './log/log-page.component';
 
 import { RepositoryPageComponent } from './repository/repository-page.component';
 import { TagRepositoryComponent } from './repository/tag-repository/tag-repository.component';
@@ -67,10 +67,6 @@ const harborRoutes: Routes = [
       {
         path: 'projects',
         component: ProjectComponent
-      },
-      {
-        path: 'logs',
-        component: LogPageComponent
       },
       {
         path: 'users',
@@ -186,7 +182,11 @@ const harborRoutes: Routes = [
         component: DestinationPageComponent,
         canActivate: [SystemAdminGuard],
         canActivateChild: [SystemAdminGuard],
-      }
+      },
+      {
+        path: 'devcenter',
+        component: DevCenterComponent
+      },
     ]
   },
   { path: "**", component: PageNotFoundComponent }

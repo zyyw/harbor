@@ -1,0 +1,15 @@
+<clr-tabs>
+    <clr-tab>
+        <button id="logs_tab" clrTabLink>{{'SIDE_NAV.LOGS' | translate}}</button>
+        <clr-tab-content id="system_settings" *clrIfActive>
+            <log-page></log-page>
+        </clr-tab-content>
+    </clr-tab>
+    <clr-tab>
+        <button id="dev_center_tab" clrTabLink>{{'SIDE_NAV.SYSTEM_MGMT.APIEXPLORER' | translate}}</button>
+        <clr-tab-content id="vulnerability" *clrIfActive>
+            <vmw-swagger-list [host]="host" [data]="swagger">
+            </vmw-swagger-list>
+        </clr-tab-content>
+    </clr-tab>
+</clr-tabs>
