@@ -29,7 +29,7 @@ import { CREATE_EDIT_LABEL_DIRECTIVES } from "./create-edit-label/index";
 import { LABEL_PIECE_DIRECTIVES } from "./label-piece/index";
 import { HELMCHART_DIRECTIVE } from "./helm-chart/index";
 import { IMAGE_NAME_INPUT_DIRECTIVES } from "./image-name-input/index";
-
+import { CRON_SCHEDULE_DIRECTIVES } from "./cron-schedule/index";
 import {
   SystemInfoService,
   SystemInfoDefaultService,
@@ -198,7 +198,8 @@ export function initConfig(translateInitializer: TranslateServiceInitializer, co
     REPOSITORY_GRIDVIEW_DIRECTIVES,
     OPERATION_DIRECTIVES,
     HELMCHART_DIRECTIVE,
-    IMAGE_NAME_INPUT_DIRECTIVES
+    IMAGE_NAME_INPUT_DIRECTIVES,
+    CRON_SCHEDULE_DIRECTIVES
   ],
   exports: [
     LOG_DIRECTIVES,
@@ -225,7 +226,8 @@ export function initConfig(translateInitializer: TranslateServiceInitializer, co
     REPOSITORY_GRIDVIEW_DIRECTIVES,
     OPERATION_DIRECTIVES,
     HELMCHART_DIRECTIVE,
-    IMAGE_NAME_INPUT_DIRECTIVES
+    IMAGE_NAME_INPUT_DIRECTIVES,
+    CRON_SCHEDULE_DIRECTIVES
   ],
   providers: []
 })

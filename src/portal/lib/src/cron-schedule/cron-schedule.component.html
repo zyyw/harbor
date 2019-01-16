@@ -1,0 +1,42 @@
+<div class="normal-wrapper flex-layout" *ngIf="!isEditMode">
+	<span>{{childTitle}}</span>
+	<span>{{(originScheduleType ? 'SCHEDULE.'+ originScheduleType.toUpperCase(): "") | translate}}</span>
+	<span [hidden]="originScheduleType!==SCHEDULE_TYPE.CUSTOM">{{
+		"SCHEDULE.CRON" | translate }} :</span>
+	<span [hidden]="originScheduleType!==SCHEDULE_TYPE.CUSTOM">{{ originCron }}</span>
+	<button class="btn btn-outline btn-sm" (click)="editSchedule()">
+		{{ "BUTTON.EDIT" | translate }}
+	</button>
+</div>
+<div class="setting-wrapper flex-layout" *ngIf="isEditMode">
+	<span>{{label}}</span>
+	<div class="select select-schedule">
+		<select name="gcPolicy" [(ngModel)]="scheduleType">
+			<option [value]="SCHEDULE_TYPE.NONE">{{'SCHEDULE.NONE' | translate}}</option>
+			<option [value]="SCHEDULE_TYPE.HOURLY">{{'SCHEDULE.HOURLY' | translate
+				}}</option>
+			<option [value]="SCHEDULE_TYPE.DAILY">{{'SCHEDULE.DAILY' | translate}}</option>
+			<option [value]="SCHEDULE_TYPE.WEEKLY">{{'SCHEDULE.WEEKLY' | translate}}</option>
+			<option [value]="SCHEDULE_TYPE.CUSTOM">{{'SCHEDULE.CUSTOM' | translate
+				}}</option>
+		</select>
+	</div>
+	<span [hidden]="scheduleType!==SCHEDULE_TYPE.CUSTOM">{{ "SCHEDULE.CRON" |
+		translate }} :</span>
+	<div [hidden]="scheduleType!==SCHEDULE_TYPE.CUSTOM" aria-haspopup="true"
+		role="tooltip" [class.invalid]="dateInvalid" class="tooltip tooltip-validation
+		tooltip-sm">
+		<input type="text" (blur)="blurInvalid()" (input)="inputInvalid()" handleValidation required class="form-control cron-input"
+			[(ngModel)]="cronstring">
+		<span *ngIf="dateInvalid" class="tooltip-content">
+			{{'AUDIT_LOG.INVALID_CRON' | translate }}
+		</span>
+	</div>
+	<button id="config_vulnerbility_save" class="btn btn-primary btn-sm"
+		(click)="save()">
+		{{ "BUTTON.SAVE" | translate }}
+	</button>
+	<button class="btn btn-primary btn-sm" (click)="isEditMode= false">
+		{{ "BUTTON.CANCEL" | translate }}
+	</button>
+</div>

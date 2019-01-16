@@ -16,6 +16,7 @@ export class GcComponent implements OnInit {
   jobs: Array<GcJobViewModel> = [];
   schedule: any;
   originScheduleType: string;
+  originCron: string;
   originOffTime: any = { value: null, text: "" };
   originWeekDay: any = { value: null, text: "" };
   scheduleType: string;
@@ -25,6 +26,7 @@ export class GcComponent implements OnInit {
   weekDay: WeekDay = WEEKDAYS[0];
   dailyTime: string;
   disableGC: boolean = false;
+  getText: string;
 
   constructor(private gcRepoService: GcRepoService,
     private gcViewModelFactory: GcViewModelFactory,
@@ -38,6 +40,10 @@ export class GcComponent implements OnInit {
   ngOnInit() {
     this.getCurrentSchedule();
     this.getJobs();
+    this.getConfigGC();
+    setTimeout(() => {
+      this.initSchedule('schedule');
+    }, 2000);
   }
 
   getCurrentSchedule() {
@@ -45,35 +51,38 @@ export class GcComponent implements OnInit {
       this.initSchedule(schedule);
     });
   }
-
-  private initSchedule(schedule: any) {
+  getConfigGC() {
+    this.translate.get('CONFIG.GC').subscribe((res: string) => {
+      this.getText = res;
+    });
+  }
+  public initSchedule(schedule: any) {
     if (schedule && schedule.length > 0) {
+      console.log(schedule);
       this.schedule = schedule[0];
       const cron = this.schedule.schedule;
-      this.originScheduleType = cron.type;
-      this.originWeekDay = this.weekDays[cron.weekday];
-      let dailyTime = this.gcUtility.getDailyTime(cron.offtime);
-      this.originOffTime = { value: cron.offtime, text: dailyTime };
+      // this.originCron = cron.cron;
+      this.originCron = '';
     } else {
-      this.originScheduleType = SCHEDULE_TYPE.NONE;
+      this.originScheduleType = '';
     }
   }
 
-  editSchedule() {
-    this.isEditMode = true;
-    this.scheduleType = this.originScheduleType;
-    if (this.originWeekDay.value) {
-      this.weekDay = this.originWeekDay;
-    } else {
-      this.weekDay = this.weekDays[0];
-    }
+  // editSchedule() {
+  //   this.isEditMode = true;
+  //   this.scheduleType = this.originScheduleType;
+  //   if (this.originWeekDay.value) {
+  //     this.weekDay = this.originWeekDay;
+  //   } else {
+  //     this.weekDay = this.weekDays[0];
+  //   }
 
-    if (this.originOffTime.value) {
-      this.dailyTime = this.originOffTime.text;
-    } else {
-      this.dailyTime = "00:00";
-    }
-  }
+  //   if (this.originOffTime.value) {
+  //     this.dailyTime = this.originOffTime.text;
+  //   } else {
+  //     this.dailyTime = "00:00";
+  //   }
+  // }
 
   getJobs() {
     this.gcRepoService.getJobs().subscribe(jobs => {
@@ -100,42 +109,64 @@ export class GcComponent implements OnInit {
     this.disableGC = false;
   }
 
-  private resetSchedule(offTime) {
-    this.schedule = {
-      schedule: {
-        type: this.scheduleType,
-        offTime: offTime,
-        weekDay: this.weekDay.value
-      }
-    };
-    this.originScheduleType = this.scheduleType;
-    this.originWeekDay = this.weekDay;
-    this.originOffTime = { value: offTime, text: this.dailyTime };
-    this.isEditMode = false;
-    this.getJobs();
-  }
+  // private resetSchedule(offTime) {
+  //   this.schedule = {
+  //     schedule: {
+  //       type: this.scheduleType,
+  //       offTime: offTime,
+  //       weekDay: this.weekDay.value
+  //     }
+  //   };
+  //   this.originScheduleType = this.scheduleType;
+  //   this.originWeekDay = this.weekDay;
+  //   this.originOffTime = { value: offTime, text: this.dailyTime };
+  //   this.isEditMode = false;
+  //   this.getJobs();
+  // }
 
-  scheduleGc(): void {
-    let offTime = this.gcUtility.getOffTime(this.dailyTime);
-    let schedule = this.schedule;
-    if (schedule && schedule.schedule && schedule.schedule.type !== SCHEDULE_TYPE.NONE) {
-      this.gcRepoService.putScheduleGc(this.scheduleType, offTime, this.weekDay.value).subscribe(response => {
+  // scheduleGc(): void {
+  //   let offTime = this.gcUtility.getOffTime(this.dailyTime);
+  //   let schedule = this.schedule;
+  //   if (schedule && schedule.schedule && schedule.schedule.type !== SCHEDULE_TYPE.NONE) {
+  //     this.gcRepoService.putScheduleGc(this.scheduleType, offTime, this.weekDay.value).subscribe(response => {
+  //       this.translate.get('GC.MSG_SCHEDULE_RESET').subscribe((res: string) => {
+  //         this.errorHandler.info(res);
+  //       });
+  //       this.resetSchedule(offTime);
+  //     }, error => {
+  //       this.errorHandler.error(error);
+  //     });
+  //   } else {
+  //     this.gcRepoService.postScheduleGc(this.scheduleType, offTime, this.weekDay.value).subscribe(response => {
+  //       this.translate.get('GC.MSG_SCHEDULE_SET').subscribe((res: string) => {
+  //         this.errorHandler.info(res);
+  //       });
+  //       this.resetSchedule(offTime);
+  //     }, error => {
+  //       this.errorHandler.error(error);
+  //     });
+  //   }
+  // }
+  getcron(cron: string) {
+    if (cron && cron !== '') {
+      this.gcRepoService.putScheduleGc(cron).subscribe(response => {
         this.translate.get('GC.MSG_SCHEDULE_RESET').subscribe((res: string) => {
           this.errorHandler.info(res);
         });
-        this.resetSchedule(offTime);
+        this.getJobs();
       }, error => {
         this.errorHandler.error(error);
       });
     } else {
-      this.gcRepoService.postScheduleGc(this.scheduleType, offTime, this.weekDay.value).subscribe(response => {
+      this.gcRepoService.postScheduleGc(cron).subscribe(response => {
         this.translate.get('GC.MSG_SCHEDULE_SET').subscribe((res: string) => {
           this.errorHandler.info(res);
         });
-        this.resetSchedule(offTime);
+        this.getJobs();
       }, error => {
         this.errorHandler.error(error);
       });
     }
+    console.log(cron);
   }
 }

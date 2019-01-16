@@ -1,0 +1,35 @@
+.flex-layout {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  font-size: .541667rem;
+}
+
+.normal-wrapper {
+  > span:first-child {
+    width: 228px;
+  }
+
+  > span:not(:first-child) {
+    margin-right: 18px;
+  }
+}
+
+.setting-wrapper {
+  > span:first-child {
+    width: 228px;
+  }
+
+  *:not(:first-child),span {
+    margin-right: 18px;
+  }
+
+  .select-schedule {
+    display: inline-block;
+    width: 100px;
+  }
+
+  .cron-input {
+    width: 100px;
+  }
+}

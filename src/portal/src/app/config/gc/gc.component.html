@@ -1,4 +1,4 @@
-<div class="normal-wrapper flex-layout" *ngIf="!isEditMode">
+<!-- <div class="normal-wrapper flex-layout" *ngIf="!isEditMode">
   <span class="font-style">{{'GC.CURRENT_SCHEDULE' | translate}}</span>
   <span>{{(originScheduleType ? 'SCHEDULE.'+ originScheduleType.toUpperCase(): "") | translate}}</span>
   <span [hidden]="originScheduleType!==SCHEDULE_TYPE.WEEKLY">{{'SCHEDULE.ON' | translate}}</span>
@@ -28,8 +28,12 @@
   </section>
   <button class="btn btn-primary btn-sm" (click)="scheduleGc()">{{'BUTTON.SAVE' | translate}}</button>
   <button class="btn btn-primary btn-sm" (click)="isEditMode = false" >{{'BUTTON.CANCEL' | translate}}</button>
+</div> -->
+<!-- <span class="font-style">{{'GC.CURRENT_SCHEDULE' | translate}}</span> -->
+<div class="cron-selection">
+<cron-selection childTitle="{{'GC.CURRENT_SCHEDULE' | translate}}" [label]='getText' [originCron]='originCron' (inputvalue)="getcron($event)"></cron-selection>
 </div>
-<button class="btn btn-primary btn-sm gc-start-btn" (click)="gcNow()" [disabled]="disableGC">{{'GC.GC_NOW' | translate}}</button>
+<button class="btn btn-primary btn-sm gc-start-btn" (click)="gcNow()" [disabled]="disableGC" style="display: block">{{'GC.GC_NOW' | translate}}</button>
 <div class="job-header font-style">{{'GC.JOB_HISTORY' | translate}}</div>
 <clr-datagrid>
   <clr-dg-column>{{'GC.JOB_ID' | translate}}</clr-dg-column>

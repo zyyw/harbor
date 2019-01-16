@@ -295,6 +295,7 @@
         "ITEMS": "items",
         "FILTER_PLACEHOLDER": "Filter Logs",
         "INVALID_DATE": "Invalid date.",
+        "INVALID_CRON": "Invalid cron.",
         "OF": "of"
     },
     "REPLICATION": {
@@ -844,7 +845,10 @@
         "NONE": "None",
         "DAILY": "Daily",
         "WEEKLY": "Weekly",
+        "HOURLY": "Hourly",
+        "CUSTOM": "Custom",
         "MANUAL": "Manual",
+        "CRON": "cron",
         "ON": "on",
         "AT": "at"
     },
