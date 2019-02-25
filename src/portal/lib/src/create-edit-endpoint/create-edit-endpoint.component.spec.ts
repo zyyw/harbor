@@ -21,12 +21,16 @@ import { IServiceConfig, SERVICE_CONFIG } from "../service.config";
 describe("CreateEditEndpointComponent (inline template)", () => {
   let mockData: Endpoint = {
     id: 1,
-    endpoint: "https://10.117.4.151",
-    name: "target_01",
-    username: "admin",
-    password: "",
+    credential: {
+      access_key: "admin",
+      access_secret: "",
+      type: "basic"
+    },
+    description: "test",
     insecure: false,
-    type: 0
+    name: "target_01",
+    type: "Harbor",
+    url: "https://10.117.4.151"
   };
 
   let comp: CreateEditEndpointComponent;

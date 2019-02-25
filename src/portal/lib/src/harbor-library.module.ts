@@ -83,7 +83,7 @@ export const DefaultServiceConfig: IServiceConfig = {
   systemInfoEndpoint: "/api/systeminfo",
   repositoryBaseEndpoint: "/api/repositories",
   logBaseEndpoint: "/api/logs",
-  targetBaseEndpoint: "/api/targets",
+  targetBaseEndpoint: "/api/registries",
   replicationBaseEndpoint: "/api/replications",
   replicationRuleEndpoint: "/api/policies/replication",
   replicationJobEndpoint: "/api/jobs/replication",

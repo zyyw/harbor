@@ -42,13 +42,17 @@ describe('ListReplicationRuleComponent (inline template)', () => {
             "role_name": ""
         }],
         "targets": [{
-            "endpoint": "",
             "id": 0,
+            "credential": {
+              "access_key": "admin",
+              "access_secret": "",
+              "type": "basic"
+            },
+            "description": "test",
             "insecure": false,
             "name": "khans3",
-            "username": "",
-            "password": "",
-            "type": 0,
+            "type": "Harbor",
+            "url": ""
         }],
         "name": "sync_01",
         "description": "",
@@ -82,13 +86,17 @@ describe('ListReplicationRuleComponent (inline template)', () => {
               "role_name": ""
           }],
           "targets": [{
-              "endpoint": "",
-              "id": 0,
-              "insecure": false,
-              "name": "khans3",
-              "username": "",
-              "password": "",
-              "type": 0,
+            "id": 0,
+            "credential": {
+              "access_key": "admin",
+              "access_secret": "",
+              "type": "basic"
+            },
+            "description": "test",
+            "insecure": false,
+            "name": "khans3",
+            "type": "Harbor",
+            "url": ""
           }],
           "name": "sync_02",
           "description": "",

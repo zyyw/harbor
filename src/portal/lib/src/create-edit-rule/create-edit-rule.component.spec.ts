@@ -74,12 +74,16 @@ describe("CreateEditRuleComponent (inline template)", () => {
       targets: [
         {
           id: 1,
-          endpoint: "https://10.117.4.151",
-          name: "target_01",
-          username: "admin",
-          password: "",
+          credential: {
+            access_key: "admin",
+            access_secret: "",
+            type: "basic"
+          },
+          description: "test",
           insecure: false,
-          type: 0
+          name: "target_01",
+          type: "Harbor",
+          url: "https://10.117.4.151"
         }
       ],
       trigger: {
@@ -126,39 +130,55 @@ describe("CreateEditRuleComponent (inline template)", () => {
   let mockEndpoints: Endpoint[] = [
     {
       id: 1,
-      endpoint: "https://10.117.4.151",
-      name: "target_01",
-      username: "admin",
-      password: "",
+      credential: {
+        access_key: "admin",
+        access_secret: "",
+        type: "basic"
+      },
+      description: "test",
       insecure: false,
-      type: 0
+      name: "target_01",
+      type: "Harbor",
+      url: "https://10.117.4.151"
     },
     {
       id: 2,
-      endpoint: "https://10.117.5.142",
-      name: "target_02",
-      username: "AAA",
-      password: "",
+      credential: {
+        access_key: "AAA",
+        access_secret: "",
+        type: "basic"
+      },
+      description: "test",
       insecure: false,
-      type: 0
+      name: "target_02",
+      type: "Harbor",
+      url: "https://10.117.5.142"
     },
     {
       id: 3,
-      endpoint: "https://101.1.11.111",
-      name: "target_03",
-      username: "admin",
-      password: "",
+      credential: {
+        access_key: "admin",
+        access_secret: "",
+        type: "basic"
+      },
+      description: "test",
       insecure: false,
-      type: 0
+      name: "target_03",
+      type: "Harbor",
+      url: "https://101.1.11.111"
     },
     {
       id: 4,
-      endpoint: "http://4.4.4.4",
-      name: "target_04",
-      username: "",
-      password: "",
+      credential: {
+        access_key: "admin",
+        access_secret: "",
+        type: "basic"
+      },
+      description: "test",
       insecure: true,
-      type: 0
+      name: "target_04",
+      type: "Harbor",
+      url: "https://4.4.4.4"
     }
   ];
 
@@ -193,12 +213,16 @@ describe("CreateEditRuleComponent (inline template)", () => {
     targets: [
       {
         id: 1,
-        endpoint: "https://10.117.4.151",
-        name: "target_01",
-        username: "admin",
-        password: "",
+        credential: {
+          access_key: "admin",
+          access_secret: "",
+          type: "basic"
+        },
+        description: "test",
         insecure: false,
-        type: 0
+        name: "target_01",
+        type: "Harbor",
+        url: "https://10.117.4.151"
       }
     ],
     trigger: {
@@ -227,7 +251,7 @@ describe("CreateEditRuleComponent (inline template)", () => {
 
   let config: IServiceConfig = {
     replicationJobEndpoint: "/api/jobs/replication/testing",
-    targetBaseEndpoint: "/api/targets/testing"
+    targetBaseEndpoint: "/api/registries/testing"
   };
 
   beforeEach(async(() => {

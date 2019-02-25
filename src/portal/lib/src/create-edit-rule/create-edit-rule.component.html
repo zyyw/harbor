@@ -91,7 +91,7 @@
             <div class="select endpointSelect pull-left" *ngFor="let target of targets.controls; let i= index"
               [formGroupName]="i">
               <select id="ruleTarget" (change)="targetChange($event)" formControlName="id">
-                <option *ngFor="let target of targetList" value="{{target.id}}">{{target.name}}-{{target.endpoint}}</option>
+                <option *ngFor="let target of targetList" value="{{target.id}}">{{target.name}}-{{target.url}}</option>
               </select>
             </div>
           </div>
