@@ -149,9 +149,16 @@ h4 {
     padding-left: 170px !important;
 }
 
-.form-group>label:first-child {
-    font-size: 14px;
-    width: 6.5rem;
+.form-group {
+    >label:first-child{
+        font-size: 14px;
+        width: 8rem;
+    }
+   .radio {
+       label {
+           margin-right:10px;
+       }
+   }
 }
 
 .form-select {
