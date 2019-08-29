@@ -1,9 +1,10 @@
 import os
 import string
 import random
+from pathlib import Path
 
 from g import DEFAULT_UID, DEFAULT_GID
-from pathlib import Path
+
 
 # To meet security requirement
 # By default it will change file mode to 0600, and make the owner of the file to 10000:10000
@@ -99,7 +100,7 @@ def prepare_dir(root: str, *args, **kwargs) -> str:
             uid = dir_uid
         if gid is None:
             gid = dir_gid
-        os.chown(absolute_path, uid, gid)
+        recursive_chown(absolute_path, uid, gid)
 
     return str(absolute_path)
 
@@ -116,3 +117,31 @@ def delfile(src):
         for item in os.listdir(src):
             itemsrc = os.path.join(src, item)
             delfile(itemsrc)
+
+
+def recursive_chown(path, uid, gid):
+    for root, dirs, files in os.walk(path):
+        for d in dirs:
+            os.chown(os.path.join(root, d), uid, gid)
+        for f in files:
+            os.chown(os.path.join(root, f), uid, gid)
+
+
+def recursive_chmod(path: str, mode: int):
+    for root, dirs, files in os.walk(path):
+        for d in dirs:
+            os.chmod(os.path.join(root, d), mode)
+        for f in files:
+            os.chmod(os.path.join(root, f), mode)
+
+
+def check_permission(path: str, uid:int = None, gid:int = None, mode:int = None):
+    if not isinstance(path, Path):
+        path = Path(path)
+    if uid is not None and uid != path.stat().st_uid:
+        return False
+    if gid is not None and gid != path.stat().st_gid:
+        return False
+    if mode is not None and (path.stat().st_mode - mode) % 0o1000 != 0:
+        return False
+    return True

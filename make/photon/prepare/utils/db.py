@@ -1,7 +1,7 @@
 import os
 
 from g import config_dir, templates_dir, data_dir, PG_UID, PG_GID
-from utils.misc import prepare_dir
+from utils.misc import prepare_dir, recursive_chmod, check_permission
 from utils.jinja import render_jinja
 
 db_config_dir = os.path.join(config_dir, "db")
@@ -10,6 +10,8 @@ db_conf_env = os.path.join(config_dir, "db", "env")
 database_data_path = os.path.join(data_dir, 'database')
 
 def prepare_db(config_dict):
+    if not check_permission(database_data_path, mode=0o700):
+        recursive_chmod(database_data_path, 0o700)
     prepare_dir(database_data_path, uid=PG_UID, gid=PG_GID)
     prepare_dir(db_config_dir)
     render_jinja(
