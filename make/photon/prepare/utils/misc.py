@@ -3,7 +3,7 @@ import string
 import random
 from pathlib import Path
 
-from g import DEFAULT_UID, DEFAULT_GID
+from ..g import DEFAULT_UID, DEFAULT_GID
 
 
 # To meet security requirement
@@ -85,13 +85,15 @@ def prepare_config_dir(root, *name):
         os.makedirs(absolute_path)
     return absolute_path
 
+
 def prepare_dir(root: str, *args, **kwargs) -> str:
     gid, uid = kwargs.get('gid'), kwargs.get('uid')
     absolute_path = Path(os.path.join(root, *args))
     if absolute_path.is_file():
         raise Exception('Path exists and the type is regular file')
     mode = kwargs.get('mode') or 0o755
-    absolute_path.mkdir(mode, parents=True, exist_ok=True)
+    absolute_path.mkdir(parents=True, exist_ok=True)
+    absolute_path.chmod(mode)
 
     # if uid or gid not None, then change the ownership of this dir
     if not(gid is None and uid is None):
@@ -114,9 +116,9 @@ def delfile(src):
         except Exception as e:
             print(e)
     elif os.path.isdir(src):
-        for item in os.listdir(src):
-            itemsrc = os.path.join(src, item)
-            delfile(itemsrc)
+        for dir_name in os.listdir(src):
+            dir_path = os.path.join(src, dir_name)
+            delfile(dir_path)
 
 
 def recursive_chown(path, uid, gid):
