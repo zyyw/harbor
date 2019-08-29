@@ -127,14 +127,6 @@ def recursive_chown(path, uid, gid):
             os.chown(os.path.join(root, f), uid, gid)
 
 
-def recursive_chmod(path: str, mode: int):
-    for root, dirs, files in os.walk(path):
-        for d in dirs:
-            os.chmod(os.path.join(root, d), mode)
-        for f in files:
-            os.chmod(os.path.join(root, f), mode)
-
-
 def check_permission(path: str, uid:int = None, gid:int = None, mode:int = None):
     if not isinstance(path, Path):
         path = Path(path)
