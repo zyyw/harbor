@@ -3,7 +3,7 @@ import string
 import random
 from pathlib import Path
 
-from ..g import DEFAULT_UID, DEFAULT_GID
+from g import DEFAULT_UID, DEFAULT_GID
 
 
 # To meet security requirement
