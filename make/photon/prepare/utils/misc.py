@@ -122,6 +122,7 @@ def delfile(src):
 
 
 def recursive_chown(path, uid, gid):
+    os.chown(path, uid, gid)
     for root, dirs, files in os.walk(path):
         for d in dirs:
             os.chown(os.path.join(root, d), uid, gid)
