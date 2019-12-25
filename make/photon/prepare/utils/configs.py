@@ -1,6 +1,8 @@
 import os
 import yaml
 import logging
+
+from models import Config
 from g import versions_file_path, host_root_dir, DEFAULT_UID, INTERNAL_NO_PROXY_DN
 from utils.misc import generate_random_string, owner_can_read, other_can_read
 
@@ -103,6 +105,8 @@ def parse_yaml_config(config_file_path, with_notary, with_clair, with_chartmuseu
     with open(config_file_path) as f:
         configs = yaml.load(f)
 
+    config_obj = Config(configs)
+
     config_dict = {
         'adminserver_url': "http://adminserver:8080",
         'registry_url': "http://registry:5000",
@@ -117,6 +121,7 @@ def parse_yaml_config(config_file_path, with_notary, with_clair, with_chartmuseu
         'chart_repository_url': 'http://chartmuseum:9999'
     }
 
+    config_dict['_config'] = config_obj
     config_dict['hostname'] = configs["hostname"]
 
     config_dict['protocol'] = 'http'
@@ -129,6 +134,9 @@ def parse_yaml_config(config_file_path, with_notary, with_clair, with_chartmuseu
         config_dict['https_port'] = https_config.get('port', 443)
         config_dict['cert_path'] = https_config["certificate"]
         config_dict['cert_key_path'] = https_config["private_key"]
+
+    if configs.get('internal_tls'):
+        config_dict['internal_tls'] = configs['internal_tls']
 
     if configs.get('external_url'):
         config_dict['public_url'] = configs.get('external_url')

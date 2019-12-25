@@ -1,4 +1,5 @@
 import os
+from functools import reduce
 
 from g import templates_dir
 from .configs import parse_versions
@@ -9,6 +10,9 @@ docker_compose_yml_path = '/compose_location/docker-compose.yml'
 
 # render docker-compose
 def prepare_docker_compose(configs, with_clair, with_notary, with_chartmuseum):
+    """
+    :configs: config file is a dict that contains configs after parse from yaml
+    """
     versions = parse_versions()
     VERSION_TAG = versions.get('VERSION_TAG') or 'dev'
     REGISTRY_VERSION = versions.get('REGISTRY_VERSION') or 'v2.7.1-patch-2819-2553'
@@ -29,13 +33,16 @@ def prepare_docker_compose(configs, with_clair, with_notary, with_chartmuseum):
         'log_location': configs['log_location'],
         'protocol': configs['protocol'],
         'http_port': configs['http_port'],
-        'registry_custom_ca_bundle_path': configs['registry_custom_ca_bundle_path'],
         'external_redis': configs['external_redis'],
         'external_database': configs['external_database'],
         'with_notary': with_notary,
         'with_clair': with_clair,
         'with_chartmuseum': with_chartmuseum
     }
+
+    # if configs.get('registry_custom_ca_bundle_path'):
+    #     rendering_variables['registry_custom_ca_bundle_path'] = configs.get('registry_custom_ca_bundle_path')
+    #     rendering_variables['custom_ca_required'] = True
 
     # for gcs
     storage_config = configs.get('storage_provider_config') or {}
@@ -47,6 +54,28 @@ def prepare_docker_compose(configs, with_clair, with_notary, with_chartmuseum):
         rendering_variables['cert_key_path'] = configs['cert_key_path']
         rendering_variables['cert_path'] = configs['cert_path']
         rendering_variables['https_port'] = configs['https_port']
+
+    # internal cert pairs
+    rendering_variables['internal_tls'] = configs['_config'].internal_tls
+    # if configs.get('internal_https_ca_path'):
+    #     rendering_variables['internal_https_ca_path'] = configs.get('internal_https_ca_path')
+    #     rendering_variables['custom_ca_required'] = True
+    # if configs.get('core_certificate'):
+    #     rendering_variables['core_certificate_path'] = configs.get('core_certificate_path')
+    # if configs.get('core_private_key'):
+    #     rendering_variables['core_private_key_path'] = configs.get('core_private_key_path')
+    # if configs.get('clair_adapter_certificate'):
+    #     rendering_variables['clair_adapter_certificate_path'] = configs.get('clair_adapter_certificate_path')
+    # if configs.get('clair_adapter_private_key'):
+    #     rendering_variables['clair_adapter_private_key_path'] = configs.get('clair_adapter_private_key_path')
+    # if configs.get('job_service_certificate'):
+    #     rendering_variables['job_service_certificate_path'] = configs.get('job_service_certificate_path')
+    # if configs.get('job_service_private_key'):
+    #     rendering_variables['job_service_private_key_path'] = configs.get('job_service_private_key_path')
+    # if configs.get('registry_ctl_certificate'):
+    #     rendering_variables['registry_ctl_certificate_path'] = configs.get('registry_ctl_certificate_path')
+    # if configs.get('registry_ctl_private_key'):
+    #     rendering_variables['registry_ctl_private_key_path'] = configs.get('registry_ctl_private_key_path')
 
     # for uaa
     uaa_config = configs.get('uaa') or {}

@@ -5,7 +5,7 @@ import logging
 import click
 from utils.misc import delfile
 from utils.configs import validate, parse_yaml_config
-from utils.cert import prepare_ca, SSL_CERT_KEY_PATH, SSL_CERT_PATH, get_secret_key
+from utils.cert import prepare_nginx_ca, SSL_CERT_KEY_PATH, SSL_CERT_PATH, get_secret_key
 from utils.db import prepare_db
 from utils.jobservice import prepare_job_service
 from utils.registry import prepare_registry
@@ -51,7 +51,7 @@ def main(conf, with_notary, with_clair, with_chartmuseum):
     get_secret_key(secret_key_dir)
 
     #  If Customized cert enabled
-    prepare_ca(
+    prepare_nginx_ca(
         private_key_pem_path=private_key_pem_path,
         root_crt_path=root_crt_path,
         old_private_key_pem_path=old_private_key_pem_path,
