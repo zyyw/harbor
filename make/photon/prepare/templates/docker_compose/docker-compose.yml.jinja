@@ -44,7 +44,7 @@ services:
 {%if internal_tls.enabled %}
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
-        target: /harbor_cust_cert/harbor_internal_ca.crt
+/etc/harbor/ssl        target: /etc/harbor/ssl/harbor_internal_ca.crt
       - type: bind
         source: {{internal_tls.registry_crt_path}}
         target: /etc/harbor/ssl/registry.crt
@@ -86,7 +86,7 @@ services:
 {%if internal_tls.enabled %}
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
-        target: /harbor_cust_cert/harbor_internal_ca.crt
+        target: /etc/harbor/ssl/harbor_internal_ca.crt
       - type: bind
         source: {{internal_tls.registryctl_crt_path}}
         target: /etc/harbor/ssl/registryctl.crt
@@ -121,7 +121,7 @@ services:
 {%if internal_tls.enabled %}
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
-        target: /harbor_cust_cert/harbor_internal_ca.crt
+        target: /etc/harbor/ssl/harbor_internal_ca.crt
       - type: bind
         source: {{internal_tls.harbor_db_crt_path}}
         target: /etc/harbor/ssl/harbor_db.crt
@@ -184,7 +184,7 @@ services:
 {%if internal_tls.enabled %}
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
-        target: /harbor_cust_cert/harbor_internal_ca.crt
+        target: /etc/harbor/ssl/harbor_internal_ca.crt
       - type: bind
         source: {{internal_tls.core_crt_path}}
         target: /etc/harbor/ssl/core.crt
@@ -264,7 +264,7 @@ services:
 {%if internal_tls.enabled %}
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
-        target: /harbor_cust_cert/harbor_internal_ca.crt
+        target: /etc/harbor/ssl/harbor_internal_ca.crt
       - type: bind
         source: {{internal_tls.job_service_crt_path}}
         target: /etc/harbor/ssl/job_service.crt
@@ -338,7 +338,7 @@ services:
 {%if internal_tls.enabled %}
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
-        target: /harbor_cust_cert/harbor_internal_ca.crt
+        target: /etc/harbor/ssl/harbor_internal_ca.crt
       - type: bind
         source: {{internal_tls.proxy_crt_path}}
         target: /etc/harbor/ssl/proxy.crt
@@ -390,7 +390,7 @@ services:
 {%if internal_tls.enabled %}
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
-        target: /harbor_cust_cert/harbor_internal_ca.crt
+        target: /etc/harbor/ssl/harbor_internal_ca.crt
       - type: bind
         source: {{internal_tls.notary_server_crt_path}}
         target: /etc/harbor/ssl/notary_server.crt
@@ -431,7 +431,7 @@ services:
 {%if internal_tls.enabled %}
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
-        target: /harbor_cust_cert/harbor_internal_ca.crt
+        target: /etc/harbor/ssl/harbor_internal_ca.crt
       - type: bind
         source: {{internal_tls.notary_signer_crt_path}}
         target: /etc/harbor/ssl/notary_signer.crt
@@ -479,13 +479,13 @@ services:
 {%if internal_tls.enabled %}
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
-        target: /harbor_cust_cert/harbor_internal_ca.crt
+        target: /etc/harbor/ssl/harbor_internal_ca.crt
       - type: bind
         source: {{internal_tls.clair_crt_path}}
         target: /etc/harbor/ssl/clair.crt
       - type: bind
         source: {{internal_tls.clair_key_path}}
-        target: /ect/harbor/ssl/clair.key
+        target: /etc/harbor/ssl/clair.key
 {% endif %}
     logging:
       driver: "syslog"
@@ -516,13 +516,13 @@ services:
 {%if internal_tls.enabled %}
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
-        target: /harbor_cust_cert/harbor_internal_ca.crt
+        target: /etc/harbor/ssl/harbor_internal_ca.crt
       - type: bind
         source: {{internal_tls.clair_adapter_crt_path}}
         target: /etc/harbor/ssl/clair_adapter.crt
       - type: bind
         source: {{internal_tls.clair_adapter_key_path}}
-        target: /ect/harbor/ssl/clair_adapter.key
+        target: /etc/harbor/ssl/clair_adapter.key
 {% endif %}
     logging:
       driver: "syslog"
@@ -555,13 +555,13 @@ services:
 {%if internal_tls.enabled %}
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
-        target: /harbor_cust_cert/harbor_internal_ca.crt
+        target: /etc/harbor/ssl/harbor_internal_ca.crt
       - type: bind
         source: {{internal_tls.chart_museum_crt_path}}
         target: /etc/harbor/ssl/chart_museum.crt
       - type: bind
         source: {{internal_tls.chart_museum_key_path}}
-        target: /ect/harbor/ssl/chart_museum.key
+        target: /etc/harbor/ssl/chart_museum.key
 {% endif %}
 {% if gcs_keyfile %}
       - type: bind
