@@ -79,7 +79,7 @@ class InternalTLS:
         Check the permission of cert and key is correct
         """
 
-        path = os.path.join(internal_tls_dir, filename)
+        path = Path(os.path.join(internal_tls_dir, filename))
 
         if not path.exists:
             if filename == 'harbor_internal_ca.crt':
