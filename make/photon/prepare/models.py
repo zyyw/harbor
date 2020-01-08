@@ -111,6 +111,7 @@ class InternalTLS:
 
     def prepare(self):
         if not self.enabled:
+            logging.info('internal tls NOT enabled...')
             return
         original_tls_dir = get_realpath(self.tls_dir)
         rmtree(internal_tls_dir)
