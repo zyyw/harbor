@@ -71,7 +71,7 @@ class InternalTLS:
             filename = '{}.{}'.format('_'.join(name_parts[:-2]), name_parts[-2])
 
             if filename in self.required_filenames:
-                return os.path.join(self.data_volume, filename)
+                return os.path.join(self.data_volume, 'secret', 'tls', filename)
 
         return object.__getattribute__(self, name)
 
