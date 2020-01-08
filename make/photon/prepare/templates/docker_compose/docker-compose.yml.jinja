@@ -81,7 +81,6 @@ services:
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
         target: /harbor_cust_cert/harbor_internal_ca.crt
-
 {% endif %}
     networks:
       - harbor
@@ -107,7 +106,7 @@ services:
       - SETUID
     volumes:
       - {{data_volume}}/database:/var/lib/postgresql/data:z
-{%if custom_ca_required %}
+{%if internal_tls.enabled %}
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
         target: /harbor_cust_cert/harbor_internal_ca.crt
@@ -116,7 +115,7 @@ services:
         target: /etc/harbor/ssl/harbor_db.crt
       - type: bind
         source: {{internal_tls.harbor_db_key_path}}
-        target: /etc/harbor/ssl/harbor_db_key.key
+        target: /etc/harbor/ssl/harbor_db.key
 {% endif %}
     networks:
       harbor:
@@ -328,6 +327,12 @@ services:
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
         target: /harbor_cust_cert/harbor_internal_ca.crt
+      - type: bind
+        source: {{internal_tls.proxy_crt_path}}
+        target: /etc/harbor/ssl/proxy.crt
+      - type: bind
+        source: {{internal_tls.proxy_key_path}}
+        target: /etc/harbor/ssl/proxy.key
 {% endif %}
     networks:
       - harbor
@@ -370,7 +375,17 @@ services:
       - type: bind
         source: {{data_volume}}/secret/registry/root.crt
         target: /etc/notary/root.crt
-
+{%if internal_tls.enabled %}
+      - type: bind
+        source: {{internal_tls.harbor_internal_ca_crt_path}}
+        target: /harbor_cust_cert/harbor_internal_ca.crt
+      - type: bind
+        source: {{internal_tls.notary_server_crt_path}}
+        target: /etc/harbor/ssl/notary_server.crt
+      - type: bind
+        source: {{internal_tls.notary_server_key_path}}
+        target: /etc/harbor/ssl/notary_server.key
+{% endif %}
     env_file:
       - ./common/config/notary/server_env
     depends_on:
@@ -401,6 +416,17 @@ services:
       - type: bind
         source: {{data_volume}}/secret/notary/notary-signer.key
         target: /etc/notary/notary-signer.key
+{%if internal_tls.enabled %}
+      - type: bind
+        source: {{internal_tls.harbor_internal_ca_crt_path}}
+        target: /harbor_cust_cert/harbor_internal_ca.crt
+      - type: bind
+        source: {{internal_tls.notary_signer_crt_path}}
+        target: /etc/harbor/ssl/notary_signer.crt
+      - type: bind
+        source: {{internal_tls.notary_signer_key_path}}
+        target: /etc/harbor/ssl/notary_signer.key
+{% endif %}
     env_file:
       - ./common/config/notary/signer_env
     depends_on:

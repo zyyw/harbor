@@ -16,6 +16,7 @@ class InternalTLS:
 
     harbor_certs_filename = {
         'harbor_internal_ca.crt',
+        'proxy.crt', 'proxy.key',
         'core.crt', 'core.key',
         'job_service.crt', 'job_service.key',
         'registry_ctl.crt', 'registry_ctl.key'
