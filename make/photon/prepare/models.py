@@ -14,7 +14,7 @@ class InternalTLS:
         'proxy.crt', 'proxy.key',
         'core.crt', 'core.key',
         'job_service.crt', 'job_service.key',
-        'registry_ctl.crt', 'registry_ctl.key'
+        'registryctl.crt', 'registryctl.key'
     }
 
     clair_certs_filename = {
@@ -50,7 +50,7 @@ class InternalTLS:
                 self.required_filenames.update(self.notary_certs_filename)
             if kwargs.get('with_chartmuseum'):
                 self.required_filenames.update(self.chart_museum_filename)
-            if kwargs.get('external_database'):
+            if not kwargs.get('external_database'):
                 self.required_filenames.update(self.db_certs_filename)
 
     def __getattribute__(self, name: str):

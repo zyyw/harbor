@@ -81,6 +81,12 @@ services:
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
         target: /harbor_cust_cert/harbor_internal_ca.crt
+      - type: bind
+        source: {{internal_tls.registryctl_crt_path}}
+        target: /etc/harbor/ssl/registryctl.crt
+      - type: bind
+        source: {{internal_tls.registryctl_key_path}}
+        target: /etc/harbor/ssl/registryctl.key
 {% endif %}
     networks:
       - harbor
