@@ -56,26 +56,7 @@ def prepare_docker_compose(configs, with_clair, with_notary, with_chartmuseum):
         rendering_variables['https_port'] = configs['https_port']
 
     # internal cert pairs
-    rendering_variables['internal_tls'] = configs['_config'].internal_tls
-    # if configs.get('internal_https_ca_path'):
-    #     rendering_variables['internal_https_ca_path'] = configs.get('internal_https_ca_path')
-    #     rendering_variables['custom_ca_required'] = True
-    # if configs.get('core_certificate'):
-    #     rendering_variables['core_certificate_path'] = configs.get('core_certificate_path')
-    # if configs.get('core_private_key'):
-    #     rendering_variables['core_private_key_path'] = configs.get('core_private_key_path')
-    # if configs.get('clair_adapter_certificate'):
-    #     rendering_variables['clair_adapter_certificate_path'] = configs.get('clair_adapter_certificate_path')
-    # if configs.get('clair_adapter_private_key'):
-    #     rendering_variables['clair_adapter_private_key_path'] = configs.get('clair_adapter_private_key_path')
-    # if configs.get('job_service_certificate'):
-    #     rendering_variables['job_service_certificate_path'] = configs.get('job_service_certificate_path')
-    # if configs.get('job_service_private_key'):
-    #     rendering_variables['job_service_private_key_path'] = configs.get('job_service_private_key_path')
-    # if configs.get('registry_ctl_certificate'):
-    #     rendering_variables['registry_ctl_certificate_path'] = configs.get('registry_ctl_certificate_path')
-    # if configs.get('registry_ctl_private_key'):
-    #     rendering_variables['registry_ctl_private_key_path'] = configs.get('registry_ctl_private_key_path')
+    rendering_variables['internal_tls'] = configs['internal_tls']
 
     # for uaa
     uaa_config = configs.get('uaa') or {}

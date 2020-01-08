@@ -7,11 +7,6 @@ from g import internal_tls_dir, DEFAULT_GID, DEFAULT_UID, PG_GID, PG_UID
 from utils.misc import check_permission, owner_can_read, other_can_read, get_realpath, owner_can_read
 
 
-class Config:
-    def __init__(self, config_dict: dict):
-        self.internal_tls = InternalTLS(config_dict.get('internal_tls'), config_dict['data_volume'])
-
-
 class InternalTLS:
 
     harbor_certs_filename = {
@@ -42,18 +37,21 @@ class InternalTLS:
     }
 
     def __init__(self, tls_dir: str, data_volume:str, **kwargs):
+        self.data_volume = data_volume
         if not tls_dir:
             self.enabled = False
-        self.enabled = True
-        self.tls_dir = tls_dir
-        self.data_volume = data_volume
-        self.required_filenames = self.harbor_certs_filename
-        if kwargs.get('with_clair'):
-            self.required_filenames.update(self.clair_certs_filename)
-        if kwargs.get('with_notary'):
-            self.required_filenames.update(self.notary_certs_filename)
-        if kwargs.get('with_chartmuseum'):
-            self.required_filenames.update(self.chart_museum_filename)
+        else:
+            self.enabled = True
+            self.tls_dir = tls_dir
+            self.required_filenames = self.harbor_certs_filename
+            if kwargs.get('with_clair'):
+                self.required_filenames.update(self.clair_certs_filename)
+            if kwargs.get('with_notary'):
+                self.required_filenames.update(self.notary_certs_filename)
+            if kwargs.get('with_chartmuseum'):
+                self.required_filenames.update(self.chart_museum_filename)
+            if kwargs.get('external_database'):
+                self.required_filenames.update(self.db_certs_filename)
 
     def __getattribute__(self, name: str):
         """
