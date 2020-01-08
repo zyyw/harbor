@@ -1,14 +1,15 @@
 import os
 import logging
 from pathlib import Path
+from shutil import copytree, rmtree
 
-from g import internal_tls_dir
+from g import internal_tls_dir, DEFAULT_GID, DEFAULT_UID, PG_GID, PG_UID
 from utils.misc import check_permission, owner_can_read, other_can_read, get_realpath, owner_can_read
 
 
 class Config:
     def __init__(self, config_dict: dict):
-        self.internal_tls = InternalTLS(config_dict.get('internal_tls'))
+        self.internal_tls = InternalTLS(config_dict.get('internal_tls'), config_dict['data_volume'])
 
 
 class InternalTLS:
@@ -21,7 +22,8 @@ class InternalTLS:
     }
 
     clair_certs_filename = {
-        'clair_adapter.crt', 'clair_adapter.key'
+        'clair_adapter.crt', 'clair_adapter.key',
+        'clair.crt', 'clair.key'
     }
 
     notary_certs_filename = {
@@ -38,11 +40,12 @@ class InternalTLS:
         'harbor_db.crt', 'harbor_db.key'
     }
 
-    def __init__(self, tls_dir: str, **kwargs):
+    def __init__(self, tls_dir: str, data_volume:str, **kwargs):
         if not tls_dir:
             self.enabled = False
         self.enabled = True
         self.tls_dir = tls_dir
+        self.data_volume = data_volume
         self.required_filenames = self.harbor_certs_filename
         if kwargs.get('with_clair'):
             self.required_filenames.update(self.clair_certs_filename)
@@ -67,16 +70,16 @@ class InternalTLS:
             filename = '{}.{}'.format('_'.join(name_parts[:-2]), name_parts[-2])
 
             if filename in self.required_filenames:
-                return os.path.join(self.tls_dir, filename)
+                return os.path.join(self.data_volume, filename)
 
         return object.__getattribute__(self, name)
 
-    def _get_path(self, filename):
-        return get_realpath(os.path.join( self.tls_dir, filename))
-
     def _check(self, filename: str):
+        """
+        Check the permission of cert and key is correct
+        """
 
-        path = self._get_path(filename)
+        path = os.path.join(internal_tls_dir, filename)
 
         if not path.exists:
             if filename == 'harbor_internal_ca.crt':
@@ -105,3 +108,23 @@ class InternalTLS:
             self._check(filename)
 
         return True
+
+    def prepare(self):
+        if not self.enabled:
+            return
+        original_tls_dir = get_realpath(self.tls_dir)
+        rmtree(internal_tls_dir)
+        copytree(original_tls_dir, internal_tls_dir, symlinks=True)
+
+        for file in internal_tls_dir.iterdir():
+            if file.name.endswith('.key'):
+                file.chmod(0o600)
+            elif file.name.endswith('.crt'):
+                file.chmod(0o644)
+
+            if file.name in self.db_certs_filename:
+                os.chown(file, PG_UID, PG_GID)
+            else:
+                os.chown(file, DEFAULT_UID, DEFAULT_GID)
+
+
