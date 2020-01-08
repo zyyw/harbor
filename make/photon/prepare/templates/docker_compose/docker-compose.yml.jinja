@@ -49,7 +49,7 @@ services:
         source: {{internal_tls.registry_crt_path}}
         target: /etc/harbor/ssl/registry.crt
       - type: bind
-        source: {{internal_tls.registrl_key_path}}
+        source: {{internal_tls.registry_key_path}}
         target: /etc/harbor/ssl/registry.key
 {% endif %}
     networks:
