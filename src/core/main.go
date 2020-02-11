@@ -17,12 +17,14 @@ package main
 import (
 	"encoding/gob"
 	"fmt"
-	"github.com/goharbor/harbor/src/migration"
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
+
+	"github.com/goharbor/harbor/src/migration"
 
 	"github.com/astaxie/beego"
 	_ "github.com/astaxie/beego/session/redis"
@@ -233,8 +235,21 @@ func main() {
 
 	server.RegisterRoutes()
 
-	log.Infof("Version: %s, Git commit: %s", version.ReleaseVersion, version.GitCommit)
+	iTLSEnabled := os.Getenv("INTERNAL_TLS_ENABLED")
+	if strings.ToLower(iTLSEnabled) == "true" {
+		log.Info("internal TLS enabled, Init TLS ...")
+		iTLSKeyPath := os.Getenv("INTERNAL_TLS_KEY_PATH")
+		iTLSCertPath := os.Getenv("INTERNAL_TLS_CERT_PATH")
+		iTrustCA := os.Getenv("INTERNAL_TLS_TRUST_CA_PATH")
 
+		log.Infof("load client key: %s client cert: %s client TrustCA", iTLSKeyPath, iTLSCertPath, iTrustCA)
+		beego.BConfig.Listen.EnableMutualHTTPS = true
+		beego.BConfig.Listen.TrustCaFile = iTrustCA
+		beego.BConfig.Listen.HTTPSKeyFile = iTLSKeyPath
+		beego.BConfig.Listen.HTTPSCertFile = iTLSCertPath
+	}
+
+	log.Infof("Version: %s, Git commit: %s", version.ReleaseVersion, version.GitCommit)
 	beego.RunWithMiddleWares("", middlewares.MiddleWares()...)
 }
 

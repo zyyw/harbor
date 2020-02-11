@@ -15,6 +15,10 @@
 package registry
 
 import (
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/goharbor/harbor/src/common"
 	"github.com/goharbor/harbor/src/common/dao"
 	"github.com/goharbor/harbor/src/common/models"
@@ -25,9 +29,6 @@ import (
 	"github.com/goharbor/harbor/src/core/promgr"
 	"github.com/goharbor/harbor/src/pkg/registry"
 	"github.com/pkg/errors"
-	"strings"
-	"sync"
-	"time"
 )
 
 // Migrator ...

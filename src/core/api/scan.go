@@ -15,9 +15,10 @@
 package api
 
 import (
-	"github.com/goharbor/harbor/src/pkg/registry"
 	"net/http"
 	"strconv"
+
+	"github.com/goharbor/harbor/src/pkg/registry"
 
 	"github.com/goharbor/harbor/src/api/scan"
 	"github.com/goharbor/harbor/src/common/models"
