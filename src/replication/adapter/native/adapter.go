@@ -16,6 +16,10 @@ package native
 
 import (
 	"fmt"
+	"sync"
+
+	"sync"
+
 	"github.com/goharbor/harbor/src/common/utils"
 	"github.com/goharbor/harbor/src/common/utils/log"
 	"github.com/goharbor/harbor/src/internal"
@@ -24,7 +28,6 @@ import (
 	adp "github.com/goharbor/harbor/src/replication/adapter"
 	"github.com/goharbor/harbor/src/replication/model"
 	"github.com/goharbor/harbor/src/replication/util"
-	"sync"
 )
 
 func init() {
