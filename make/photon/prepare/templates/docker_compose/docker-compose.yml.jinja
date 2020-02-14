@@ -43,8 +43,11 @@ services:
 {% endif %}
 {%if internal_tls.enabled %}
       - type: bind
+        source: {{internal_tls.core_key_path}}
+        target: /harbor_cust_cert/core.crt
+      - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
-        target: /etc/harbor/tls/harbor_internal_ca.crt
+        target: /harbor_cust_cert/harbor_internal_ca.crt
       - type: bind
         source: {{internal_tls.registry_crt_path}}
         target: /etc/harbor/tls/registry.crt
