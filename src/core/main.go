@@ -243,8 +243,10 @@ func main() {
 		iTrustCA := os.Getenv("INTERNAL_TLS_TRUST_CA_PATH")
 
 		log.Infof("load client key: %s client cert: %s client TrustCA", iTLSKeyPath, iTLSCertPath, iTrustCA)
-		beego.BConfig.Listen.EnableMutualHTTPS = true
-		beego.BConfig.Listen.TrustCaFile = iTrustCA
+		// uncomment following if harbor2 is ready
+		// beego.BConfig.Listen.EnableMutualHTTPS = true
+		// beego.BConfig.Listen.TrustCaFile = iTrustCA
+		beego.BConfig.Listen.EnableHTTPS = true
 		beego.BConfig.Listen.HTTPSKeyFile = iTLSKeyPath
 		beego.BConfig.Listen.HTTPSCertFile = iTLSCertPath
 	}
