@@ -482,7 +482,7 @@ services:
 {%if internal_tls.enabled %}
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
-        target: /etc/harbor/ssl/harbor_internal_ca.crt
+        target: /harbor_cust_cert/harbor_internal_ca.crt 
       - type: bind
         source: {{internal_tls.clair_crt_path}}
         target: /etc/harbor/ssl/clair.crt
@@ -517,9 +517,10 @@ services:
       - redis
 {% endif %}
 {%if internal_tls.enabled %}
+    volumes:
       - type: bind
         source: {{internal_tls.harbor_internal_ca_crt_path}}
-        target: /etc/harbor/ssl/harbor_internal_ca.crt
+        target: /harbor_cust_cert/harbor_internal_ca.crt 
       - type: bind
         source: {{internal_tls.clair_adapter_crt_path}}
         target: /etc/harbor/ssl/clair_adapter.crt
