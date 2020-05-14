@@ -82,7 +82,7 @@ type Client interface {
 	// BlobExist checks the existence of the specified blob
 	BlobExist(repository, digest string) (exist bool, err error)
 	// PullBlob pulls the specified blob. The caller must close the returned "blob"
-	PullBlob(repository, digest string) (size int64, blob io.ReadCloser, err error)
+	PullBlob(repository, digest string) (descriptor distribution.Descriptor, blob io.ReadCloser, err error)
 	// PushBlob pushes the specified blob
 	PushBlob(repository, digest string, size int64, blob io.Reader) error
 	// MountBlob mounts the blob from the source repository
@@ -346,22 +346,28 @@ func (c *client) BlobExist(repository, digest string) (bool, error) {
 	return true, nil
 }
 
-func (c *client) PullBlob(repository, digest string) (int64, io.ReadCloser, error) {
-	req, err := http.NewRequest(http.MethodGet, buildBlobURL(c.url, repository, digest), nil)
+func (c *client) PullBlob(repository, dig string) (distribution.Descriptor, io.ReadCloser, error) {
+	d := distribution.Descriptor{}
+	req, err := http.NewRequest(http.MethodGet, buildBlobURL(c.url, repository, dig), nil)
 	if err != nil {
-		return 0, nil, err
+		return d, nil, err
 	}
 	resp, err := c.do(req)
 	if err != nil {
-		return 0, nil, err
+		return d, nil, err
 	}
 	n := resp.Header.Get(http.CanonicalHeaderKey("Content-Length"))
 	size, err := strconv.ParseInt(n, 10, 64)
 	if err != nil {
 		defer resp.Body.Close()
-		return 0, nil, err
+		return d, nil, err
 	}
-	return size, resp.Body, nil
+	d.Size = size
+	mediaType := resp.Header.Get(http.CanonicalHeaderKey("Content-Type"))
+	d.MediaType = mediaType
+	//digStr := resp.Header.Get(http.CanonicalHeaderKey("Docker-Content-Digest"))
+	d.Digest = digest.Digest(dig)
+	return d, resp.Body, nil
 }
 
 func (c *client) PushBlob(repository, digest string, size int64, blob io.Reader) error {
