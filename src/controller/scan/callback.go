@@ -16,6 +16,7 @@ package scan
 
 import (
 	"context"
+	"github.com/goharbor/harbor/src/controller/event/operator"
 
 	"github.com/goharbor/harbor/src/controller/artifact"
 	"github.com/goharbor/harbor/src/controller/event/metadata"
@@ -95,7 +96,8 @@ func scanTaskStatusChange(ctx context.Context, taskID int64, status string) (err
 						Tag:         getArtifactTag(t.ExtraAttrs),
 						MimeType:    art.ManifestMediaType,
 					},
-					Status: status,
+					Status:   status,
+					Operator: operator.FromContext(ctx),
 				}
 				// fire event
 				notification.AddEvent(ctx, e)
