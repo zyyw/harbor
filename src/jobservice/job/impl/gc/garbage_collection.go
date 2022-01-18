@@ -249,6 +249,9 @@ const (
 	GoroutineNumber = 5
 )
 
+// the mutex used when computing blobCnt, mfCnt, sweepSize
+var mu sync.Mutex
+
 func (gc *GarbageCollector) sweep(ctx job.Context) error {
 	gc.logger = ctx.GetLogger()
 	blobCnt, mfCnt, sweepSize := new(int64), new(int64), new(int64)
@@ -409,7 +412,9 @@ func sweepProcessing(ctx job.Context, wg1 *sync.WaitGroup, gc *GarbageCollector,
 			}
 			return
 		}
+		mu.Lock()
 		*sweepSize = *sweepSize + blob.Size
+		mu.Unlock()
 	}
 
 	gc.logger.Infof("delete blob record from database: %d, %s", blob.ID, blob.Digest)
@@ -431,11 +436,13 @@ func sweepProcessing(ctx job.Context, wg1 *sync.WaitGroup, gc *GarbageCollector,
 		se.mu.Unlock()
 		return
 	}
+	mu.Lock()
 	if blob.IsManifest() {
 		*mfCnt++
 	} else {
 		*blobCnt++
 	}
+	mu.Unlock()
 }
 
 // cleanCache is to clean the registry cache for GC.
