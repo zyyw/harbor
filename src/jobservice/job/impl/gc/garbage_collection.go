@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/goharbor/harbor/src/common/registryctl"
+	"github.com/goharbor/harbor/src/common/utils"
 	"github.com/goharbor/harbor/src/controller/artifact"
 	"github.com/goharbor/harbor/src/controller/project"
 	"github.com/goharbor/harbor/src/jobservice/job"
@@ -239,210 +240,157 @@ func (gc *GarbageCollector) mark(ctx job.Context) error {
 	return nil
 }
 
-type SyncError struct {
-	retErr error
-	mu     sync.Mutex
-}
-
 const (
-	// GoroutineNumber defines the batch size of go-routine to be run per GC job
-	GoroutineNumber = 5
+	BatchSize = 5
 )
-
-// the mutex used when computing blobCnt, mfCnt, sweepSize
-var mu sync.Mutex
 
 func (gc *GarbageCollector) sweep(ctx job.Context) error {
 	gc.logger = ctx.GetLogger()
+
+	// the mutex used when computing blobCnt, mfCnt, sweepSize
+	var mu sync.Mutex
 	blobCnt, mfCnt, sweepSize := new(int64), new(int64), new(int64)
 	*blobCnt, *mfCnt, *sweepSize = 0, 0, 0
-	wg1 := sync.WaitGroup{}
-	se := SyncError{}
-	goroutineCnt := 0
+	runner1 := utils.NewLimitedConcurrentRunner(BatchSize)
 	for _, blob := range gc.deleteSet {
-		se.mu.Lock()
-		if se.retErr != nil {
-			se.mu.Unlock()
-			return se.retErr
-		}
-		se.mu.Unlock()
-		wg1.Add(1)
-		goroutineCnt += 1
-		go sweepProcessing(ctx, &wg1, gc, blob, blobCnt, mfCnt, sweepSize, &se)
-		if goroutineCnt == GoroutineNumber {
-			wg1.Wait()
-			goroutineCnt = 0
-		}
-	}
-	wg1.Wait()
-	gc.logger.Infof("%d blobs and %d manifests are actually deleted", *blobCnt, *mfCnt)
-	gc.logger.Infof("The GC job actual frees up %d MB space.", *sweepSize/1024/1024)
-	se.mu.Lock()
-	if se.retErr != nil {
-		se.mu.Unlock()
-		return se.retErr
-	}
-	se.mu.Unlock()
-	return nil
-}
-
-func sweepProcessing(ctx job.Context, wg1 *sync.WaitGroup, gc *GarbageCollector, blob *blobModels.Blob, blobCnt, mfCnt, sweepSize *int64, se *SyncError) {
-	defer wg1.Done()
-
-	// set the status firstly, if the blob is updated by any HEAD/PUT request, it should be fail and skip.
-	blob.Status = blobModels.StatusDeleting
-	count, err := gc.blobMgr.UpdateBlobStatus(ctx.SystemContext(), blob)
-	if err != nil {
-		gc.logger.Errorf("failed to mark gc candidate deleting, skip: %s, %s", blob.Digest, blob.Status)
-		return
-	}
-	if count == 0 {
-		gc.logger.Warningf("no blob found to mark gc candidate deleting, ID:%d, digest:%s", blob.ID, blob.Digest)
-		return
-	}
-
-	// remove tags and revisions of a manifest
-	skippedBlob := false
-	if _, exist := gc.trashedArts[blob.Digest]; exist && blob.IsManifest() {
-		wg2 := sync.WaitGroup{}
-		goroutineCnt := 0
-		for _, art := range gc.trashedArts[blob.Digest] {
-			se.mu.Lock()
-			if se.retErr != nil {
-				se.mu.Unlock()
-				return
+		// copy !
+		curBlob := blob
+		runner1.AddTask(func() error {
+			// set the status firstly, if the blob is updated by any HEAD/PUT request, it should be fail and skip.
+			curBlob.Status = blobModels.StatusDeleting
+			count, err := gc.blobMgr.UpdateBlobStatus(ctx.SystemContext(), curBlob)
+			if err != nil {
+				gc.logger.Errorf("failed to mark gc candidate deleting, skip: %s, %s", curBlob.Digest, curBlob.Status)
+				return nil
 			}
-			se.mu.Unlock()
-			wg2.Add(1)
-			goroutineCnt += 1
-			go func(wg2 *sync.WaitGroup, blob *blobModels.Blob, art model.ArtifactTrash, gc *GarbageCollector, se *SyncError) {
-				defer wg2.Done()
-				// Harbor cannot know the existing tags in the backend from its database, so let the v2 DELETE manifest to remove all of them.
-				gc.logger.Infof("delete the manifest with registry v2 API: %s, %s, %s",
-					art.RepositoryName, blob.ContentType, blob.Digest)
-				if err := v2DeleteManifest(gc.logger, art.RepositoryName, blob.Digest); err != nil {
-					gc.logger.Errorf("failed to delete manifest with v2 API, %s, %s, %v", art.RepositoryName, blob.Digest, err)
-					if err := ignoreNotFound(func() error {
-						return gc.markDeleteFailed(ctx, blob)
-					}); err != nil {
-						gc.logger.Errorf("failed to call gc.markDeleteFailed() after v2DeleteManifest() error out: %s, %v", blob.Digest, err)
-						se.mu.Lock()
-						se.retErr = err
-						se.mu.Unlock()
-						return
-					}
-					skippedBlob = true
-					return
+			if count == 0 {
+				gc.logger.Warningf("no blob found to mark gc candidate deleting, ID:%d, digest:%s", curBlob.ID, curBlob.Digest)
+				return nil
+			}
+
+			// remove tags and revisions of a manifest
+			skippedBlob := false
+			if _, exist := gc.trashedArts[curBlob.Digest]; exist && curBlob.IsManifest() {
+				runner2 := utils.NewLimitedConcurrentRunner(BatchSize)
+				for _, art := range gc.trashedArts[curBlob.Digest] {
+					// copy !
+					curArt := art
+					runner2.AddTask(func() error {
+						// Harbor cannot know the existing tags in the backend from its database, so let the v2 DELETE manifest to remove all of them.
+						gc.logger.Infof("delete the manifest with registry v2 API: %s, %s, %s",
+							curArt.RepositoryName, curBlob.ContentType, curBlob.Digest)
+						if err := v2DeleteManifest(gc.logger, curArt.RepositoryName, curBlob.Digest); err != nil {
+							gc.logger.Errorf("failed to delete manifest with v2 API, %s, %s, %v", curArt.RepositoryName, curBlob.Digest, err)
+							if err := ignoreNotFound(func() error {
+								return gc.markDeleteFailed(ctx, curBlob)
+							}); err != nil {
+								gc.logger.Errorf("failed to call gc.markDeleteFailed() after v2DeleteManifest() error out: %s, %v", curBlob.Digest, err)
+								runner2.Cancel(err)
+								return err
+							}
+							skippedBlob = true
+							return nil
+						}
+						// for manifest, it has to delete the revisions folder of each repository
+						gc.logger.Infof("delete manifest from storage: %s", curBlob.Digest)
+						if err := retry.Retry(func() error {
+							return ignoreNotFound(func() error {
+								return gc.registryCtlClient.DeleteManifest(curArt.RepositoryName, curBlob.Digest)
+							})
+						}, retry.Callback(func(err error, sleep time.Duration) {
+							gc.logger.Infof("failed to exec DeleteManifest, error: %v, will retry again after: %s", err, sleep)
+						})); err != nil {
+							gc.logger.Errorf("failed to remove manifest from storage: %s, %s, errMsg=%v", curArt.RepositoryName, curBlob.Digest, err)
+							if err := ignoreNotFound(func() error {
+								return gc.markDeleteFailed(ctx, curBlob)
+							}); err != nil {
+								gc.logger.Errorf("failed to call gc.markDeleteFailed() after gc.registryCtlClient.DeleteManifest() error out: %s, %s, %v", curArt.RepositoryName, curBlob.Digest, err)
+								runner2.Cancel(err)
+								return err
+							}
+							skippedBlob = true
+							return nil
+						}
+
+						gc.logger.Infof("delete artifact trash record from database: %d, %s, %s", curArt.ID, curArt.RepositoryName, curArt.Digest)
+						if err := ignoreNotFound(func() error {
+							return gc.artrashMgr.Delete(ctx.SystemContext(), curArt.ID)
+						}); err != nil {
+							gc.logger.Errorf("failed to call gc.artrashMgr.Delete(): %v, errMsg=%v", curArt.ID, err)
+							runner2.Cancel(err)
+							return err
+						}
+						return nil
+					})
 				}
-				// for manifest, it has to delete the revisions folder of each repository
-				gc.logger.Infof("delete manifest from storage: %s", blob.Digest)
+				if err = runner2.Wait(); err != nil {
+					runner1.Cancel(err)
+					return err
+				}
+			}
+
+			// skip deleting the blob if the manifest's tag/revision is not deleted
+			if skippedBlob {
+				return nil
+			}
+
+			// delete all of blobs, which include config, layer and manifest
+			// for the foreign layer, as it's not stored in the storage, no need to call the delete api and count size, but still have to delete the DB record.
+			if !curBlob.IsForeignLayer() {
+				gc.logger.Infof("delete blob from storage: %s", curBlob.Digest)
 				if err := retry.Retry(func() error {
 					return ignoreNotFound(func() error {
-						return gc.registryCtlClient.DeleteManifest(art.RepositoryName, blob.Digest)
+						return gc.registryCtlClient.DeleteBlob(curBlob.Digest)
 					})
 				}, retry.Callback(func(err error, sleep time.Duration) {
-					gc.logger.Infof("failed to exec DeleteManifest, error: %v, will retry again after: %s", err, sleep)
+					gc.logger.Infof("failed to exec DeleteBlob, error: %v, will retry again after: %s", err, sleep)
 				})); err != nil {
-					gc.logger.Errorf("failed to remove manifest from storage: %s, %s, errMsg=%v", art.RepositoryName, blob.Digest, err)
+					gc.logger.Errorf("failed to delete blob from storage: %s, %s, errMsg=%v", curBlob.Digest, curBlob.Status, err)
 					if err := ignoreNotFound(func() error {
-						return gc.markDeleteFailed(ctx, blob)
+						return gc.markDeleteFailed(ctx, curBlob)
 					}); err != nil {
-						gc.logger.Errorf("failed to call gc.markDeleteFailed() after gc.registryCtlClient.DeleteManifest() error out: %s, %s, %v", art.RepositoryName, blob.Digest, err)
-						se.mu.Lock()
-						se.retErr = err
-						se.mu.Unlock()
-						return
+						gc.logger.Errorf("failed to call gc.markDeleteFailed() after gc.registryCtlClient.DeleteBlob() error out: %s, %v", curBlob.Digest, err)
+						runner1.Cancel(err)
+						return err
 					}
-					skippedBlob = true
-					return
+					return nil
 				}
-
-				gc.logger.Infof("delete artifact trash record from database: %d, %s, %s", art.ID, art.RepositoryName, art.Digest)
-				if err := ignoreNotFound(func() error {
-					return gc.artrashMgr.Delete(ctx.SystemContext(), art.ID)
-				}); err != nil {
-					gc.logger.Errorf("failed to call gc.artrashMgr.Delete(): %v, errMsg=%v", art.ID, err)
-					se.mu.Lock()
-					se.retErr = err
-					se.mu.Unlock()
-					return
-				}
-			}(&wg2, blob, art, gc, se)
-			if goroutineCnt == GoroutineNumber {
-				wg2.Wait()
-				goroutineCnt = 0
+				mu.Lock()
+				*sweepSize = *sweepSize + curBlob.Size
+				mu.Unlock()
 			}
-		}
-		wg2.Wait()
-	}
 
-	// skip deleting the blob when processing db of deleting manifest's tag/revision errors out
-	se.mu.Lock()
-	if se.retErr != nil {
-		se.mu.Unlock()
-		return
-	}
-	se.mu.Unlock()
-
-	// skip deleting the blob if the manifest's tag/revision is not deleted
-	if skippedBlob {
-		return
-	}
-
-	// delete all of blobs, which include config, layer and manifest
-	// for the foreign layer, as it's not stored in the storage, no need to call the delete api and count size, but still have to delete the DB record.
-	if !blob.IsForeignLayer() {
-		gc.logger.Infof("delete blob from storage: %s", blob.Digest)
-		if err := retry.Retry(func() error {
-			return ignoreNotFound(func() error {
-				return gc.registryCtlClient.DeleteBlob(blob.Digest)
-			})
-		}, retry.Callback(func(err error, sleep time.Duration) {
-			gc.logger.Infof("failed to exec DeleteBlob, error: %v, will retry again after: %s", err, sleep)
-		})); err != nil {
-			gc.logger.Errorf("failed to delete blob from storage: %s, %s, errMsg=%v", blob.Digest, blob.Status, err)
+			gc.logger.Infof("delete blob record from database: %d, %s", curBlob.ID, curBlob.Digest)
 			if err := ignoreNotFound(func() error {
-				return gc.markDeleteFailed(ctx, blob)
+				return gc.blobMgr.Delete(ctx.SystemContext(), curBlob.ID)
 			}); err != nil {
-				gc.logger.Errorf("failed to call gc.markDeleteFailed() after gc.registryCtlClient.DeleteBlob() error out: %s, %v", blob.Digest, err)
-				se.mu.Lock()
-				se.retErr = err
-				se.mu.Unlock()
-				return
+				gc.logger.Errorf("failed to delete blob from database: %s, %s, errMsg=%v", curBlob.Digest, curBlob.Status, err)
+				if err := ignoreNotFound(func() error {
+					return gc.markDeleteFailed(ctx, curBlob)
+				}); err != nil {
+					gc.logger.Errorf("failed to call gc.markDeleteFailed() after gc.blobMgr.Delete() error out, %d, %s %v", curBlob.ID, curBlob.Digest, err)
+					runner1.Cancel(err)
+					return err
+				}
+				runner1.Cancel(err)
+				return err
 			}
-			return
-		}
-		mu.Lock()
-		*sweepSize = *sweepSize + blob.Size
-		mu.Unlock()
+			mu.Lock()
+			if curBlob.IsManifest() {
+				*mfCnt++
+			} else {
+				*blobCnt++
+			}
+			mu.Unlock()
+			return nil
+		})
 	}
-
-	gc.logger.Infof("delete blob record from database: %d, %s", blob.ID, blob.Digest)
-	if err := ignoreNotFound(func() error {
-		return gc.blobMgr.Delete(ctx.SystemContext(), blob.ID)
-	}); err != nil {
-		gc.logger.Errorf("failed to delete blob from database: %s, %s, errMsg=%v", blob.Digest, blob.Status, err)
-		if err := ignoreNotFound(func() error {
-			return gc.markDeleteFailed(ctx, blob)
-		}); err != nil {
-			gc.logger.Errorf("failed to call gc.markDeleteFailed() after gc.blobMgr.Delete() error out, %d, %s %v", blob.ID, blob.Digest, err)
-			se.mu.Lock()
-			se.retErr = err
-			se.mu.Unlock()
-			return
-		}
-		se.mu.Lock()
-		se.retErr = err
-		se.mu.Unlock()
-		return
+	if err := runner1.Wait(); err != nil {
+		return err
 	}
-	mu.Lock()
-	if blob.IsManifest() {
-		*mfCnt++
-	} else {
-		*blobCnt++
-	}
-	mu.Unlock()
+	gc.logger.Infof("%d blobs and %d manifests are actually deleted", *blobCnt, *mfCnt)
+	gc.logger.Infof("The GC job actual frees up %d MB space.", *sweepSize/1024/1024)
+	return nil
 }
 
 // cleanCache is to clean the registry cache for GC.
