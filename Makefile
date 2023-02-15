@@ -9,7 +9,7 @@
 # compile_golangimage:
 #			compile from golang image
 #			for example: make compile_golangimage -e GOBUILDIMAGE= \
-#							golang:1.19.5
+#							golang:1.19.4
 # compile_core, compile_jobservice: compile specific binary
 #
 # build:	build Harbor docker images from photon baseimage
@@ -157,14 +157,14 @@ GOINSTALL=$(GOCMD) install
 GOTEST=$(GOCMD) test
 GODEP=$(GOTEST) -i
 GOFMT=gofmt -w
-GOBUILDIMAGE=golang:1.19.5
+GOBUILDIMAGE=golang:1.19.4
 GOBUILDPATHINCONTAINER=/harbor
 
 # go build
 PKG_PATH=github.com/goharbor/harbor/src/pkg
 GITCOMMIT := $(shell git rev-parse --short=8 HEAD)
 RELEASEVERSION := $(shell cat VERSION)
-GOFLAGS="-buildvcs=false"
+GOFLAGS=
 GOTAGS=$(if $(GOBUILDTAGS),-tags "$(GOBUILDTAGS)",)
 GOLDFLAGS=$(if $(GOBUILDLDFLAGS),--ldflags "-w -s $(GOBUILDLDFLAGS)",)
 CORE_LDFLAGS=-X $(PKG_PATH)/version.GitCommit=$(GITCOMMIT) -X $(PKG_PATH)/version.ReleaseVersion=$(RELEASEVERSION)
