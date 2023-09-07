@@ -16,6 +16,7 @@ package artifact
 
 import (
 	"context"
+	"github.com/goharbor/harbor/src/lib/log"
 	"time"
 
 	"github.com/goharbor/harbor/src/lib/q"
@@ -115,6 +116,7 @@ func (m *manager) Create(ctx context.Context, artifact *Artifact) (int64, error)
 func (m *manager) Delete(ctx context.Context, id int64) error {
 	// delete references
 	if err := m.dao.DeleteReferences(ctx, id); err != nil {
+		log.Errorf("[Delete], err=%v", err)
 		return err
 	}
 	// delete artifact

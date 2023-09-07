@@ -141,6 +141,7 @@ func getManifest(w http.ResponseWriter, req *http.Request) {
 func deleteManifest(w http.ResponseWriter, req *http.Request) {
 	repository := router.Param(req.Context(), ":splat")
 	reference := router.Param(req.Context(), ":reference")
+	log.Infof("[deleteManifest] reference=%v", reference)
 	// v2 doesn't support delete by tag
 	// add parse digest here is to return ErrDigestInvalidFormat before GetByReference throws an NOT_FOUND(404)
 	// Do not add the logic into GetByReference as it's a shared method for PUT/GET/DELETE/Internal call,
@@ -154,6 +155,8 @@ func deleteManifest(w http.ResponseWriter, req *http.Request) {
 		lib_http.SendError(w, err)
 		return
 	}
+	log.Infof("[deleteManifest], art.ID=%v", art.ID)
+	log.Infof("[deleteManifest], art=%+v", art)
 	if err = artifact.Ctl.Delete(req.Context(), art.ID); err != nil {
 		lib_http.SendError(w, err)
 		return

@@ -17,6 +17,7 @@ package dao
 import (
 	"context"
 	"fmt"
+	"github.com/goharbor/harbor/src/lib/log"
 	"strings"
 	"time"
 
@@ -172,6 +173,7 @@ func (d *dao) Delete(ctx context.Context, id int64) error {
 			"the artifact %d is referenced by other resources", id); e != nil {
 			err = e
 		}
+		log.Errorf("[Delete], id=%v, err=%v", id, err)
 		return err
 	}
 	if n == 0 {

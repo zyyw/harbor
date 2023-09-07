@@ -301,6 +301,7 @@ func (c *controller) getByTag(ctx context.Context, repository, tag string, optio
 }
 
 func (c *controller) Delete(ctx context.Context, id int64) error {
+	log.Infof("[Delete], id=%v", id)
 	accs, err := c.accessoryMgr.List(ctx, q.New(q.KeyWords{"ArtifactID": id}))
 	if err != nil {
 		return err
@@ -314,6 +315,7 @@ func (c *controller) Delete(ctx context.Context, id int64) error {
 // the error handling logic for the root parent artifact and others is different
 // "isAccessory" is used to specify whether the artifact is an accessory.
 func (c *controller) deleteDeeply(ctx context.Context, id int64, isRoot, isAccessory bool) error {
+	log.Infof("[deleteDeeply], id=%v, isRoot=%v, isAccessory=%v", id, isRoot, isAccessory)
 	art, err := c.Get(ctx, id, &Option{WithTag: true, WithAccessory: true})
 	if err != nil {
 		// return nil if the nonexistent artifact isn't the root parent
@@ -341,6 +343,7 @@ func (c *controller) deleteDeeply(ctx context.Context, id int64, isRoot, isAcces
 	if err != nil {
 		return err
 	}
+	log.Infof("[deleteDeeply], parents=%+v", parents)
 	if len(parents) > 0 {
 		// the root artifact is referenced by other artifacts
 		if isRoot {
@@ -352,6 +355,7 @@ func (c *controller) deleteDeeply(ctx context.Context, id int64, isRoot, isAcces
 	}
 
 	// delete accessories if contains any
+	log.Infof("[deleteDeeply], art.Accessories=%+v", art.Accessories)
 	for _, acc := range art.Accessories {
 		// only hard ref accessory should be removed
 		if acc.IsHard() {
@@ -362,6 +366,7 @@ func (c *controller) deleteDeeply(ctx context.Context, id int64, isRoot, isAcces
 	}
 
 	// delete child artifacts if contains any
+	log.Infof("[deleteDeeply], art.References=%+v", art.References)
 	for _, reference := range art.References {
 		// delete reference
 		if err = c.artMgr.DeleteReference(ctx, reference.ID); err != nil &&
@@ -390,11 +395,13 @@ func (c *controller) deleteDeeply(ctx context.Context, id int64, isRoot, isAcces
 	}
 
 	// delete the artifact itself
+	log.Infof("[deleteDeeply], c.artMgr.Delete(ctx, art.ID)=%v", art.ID)
 	if err = c.artMgr.Delete(ctx, art.ID); err != nil {
 		// the child artifact doesn't exist, skip
 		if !isRoot && errors.IsErr(err, errors.NotFoundCode) {
 			return nil
 		}
+		log.Errorf("[deleteDeeply], err=%v", err)
 		return err
 	}
 
