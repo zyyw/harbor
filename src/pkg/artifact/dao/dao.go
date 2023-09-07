@@ -250,12 +250,16 @@ func (d *dao) ListReferences(ctx context.Context, query *q.Query) ([]*ArtifactRe
 func (d *dao) DeleteReference(ctx context.Context, id int64) error {
 	ormer, err := orm.FromContext(ctx)
 	if err != nil {
+		log.Errorf("[DeleteReference] err1=%+v", err)
 		return err
 	}
+	log.Infof("[DeleteReference], referenceID=%v", id)
 	n, err := ormer.Delete(&ArtifactReference{ID: id})
 	if err != nil {
+		log.Errorf("[DeleteReference], err2=%+v", err)
 		return err
 	}
+	log.Infof("[DeleteReference], n=%v", n)
 	if n == 0 {
 		return errors.NotFoundError(nil).WithMessage("artifact reference %d not found", id)
 	}

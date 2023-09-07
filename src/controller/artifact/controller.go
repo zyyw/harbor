@@ -369,10 +369,13 @@ func (c *controller) deleteDeeply(ctx context.Context, id int64, isRoot, isAcces
 	log.Infof("[deleteDeeply], art.References=%+v", art.References)
 	for _, reference := range art.References {
 		// delete reference
+		log.Infof("[deleteDeeply], reference=%+v", reference)
 		if err = c.artMgr.DeleteReference(ctx, reference.ID); err != nil &&
 			!errors.IsErr(err, errors.NotFoundCode) {
+			log.Infof("[deleteDeeply], err1=%+v", err)
 			return err
 		}
+		log.Infof("[deleteDeeply], err2=%+v", err)
 		if err = c.deleteDeeply(ctx, reference.ChildID, false, false); err != nil {
 			return err
 		}
