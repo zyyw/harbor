@@ -376,7 +376,11 @@ func (c *controller) deleteDeeply(ctx context.Context, id int64, isRoot, isAcces
 			return err
 		}
 		log.Infof("[deleteDeeply], err2=%+v", err)
-		if err = c.deleteDeeply(ctx, reference.ChildID, false, false); err != nil {
+		accs, err := c.accessoryMgr.List(ctx, q.New(q.KeyWords{"ArtifactID": id}))
+		if err != nil {
+			return err
+		}
+		if err = c.deleteDeeply(ctx, reference.ChildID, false, len(accs) > 0); err != nil {
 			return err
 		}
 	}
