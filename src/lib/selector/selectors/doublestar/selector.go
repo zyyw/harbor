@@ -16,6 +16,7 @@ package doublestar
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/bmatcuk/doublestar"
 
@@ -165,5 +166,7 @@ func match(pattern, str string) (bool, error) {
 	if len(pattern) == 0 {
 		return true, nil
 	}
-	return doublestar.Match(pattern, str)
+	oldDelimiter := "/"
+	newDelimiter := "|"
+	return doublestar.Match(strings.ReplaceAll(pattern, oldDelimiter, newDelimiter), strings.ReplaceAll(str, oldDelimiter, newDelimiter))
 }
