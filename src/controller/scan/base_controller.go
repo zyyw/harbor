@@ -65,13 +65,13 @@ const (
 	configRegistryEndpoint = "registryEndpoint"
 	configCoreInternalAddr = "coreInternalAddr"
 
-	artfiactKey     = "artifact"
-	registrationKey = "registration"
-
-	artifactIDKey  = "artifact_id"
-	artifactTagKey = "artifact_tag"
-	reportUUIDsKey = "report_uuids"
-	robotIDKey     = "robot_id"
+	artfiactKey         = "artifact"
+	registrationKey     = "registration"
+	enableCapabilityKey = "enabled_capabilities"
+	artifactIDKey       = "artifact_id"
+	artifactTagKey      = "artifact_tag"
+	reportUUIDsKey      = "report_uuids"
+	robotIDKey          = "robot_id"
 )
 
 // uuidGenerator is a func template which is for generating UUID.
@@ -91,6 +91,7 @@ type launchScanJobParam struct {
 	Artifact     *ar.Artifact
 	Tag          string
 	Reports      []*scan.Report
+	ScanType     string
 }
 
 // basicController is default implementation of api.Controller interface
@@ -287,6 +288,7 @@ func (bc *basicController) Scan(ctx context.Context, artifact *ar.Artifact, opti
 				Artifact:     art,
 				Tag:          tag,
 				Reports:      reports,
+				ScanType:     opts.ScanType,
 			})
 		}
 	}
@@ -295,6 +297,12 @@ func (bc *basicController) Scan(ctx context.Context, artifact *ar.Artifact, opti
 	if len(errs) == len(artifacts) {
 		return errs[0]
 	}
+
+	scanType := opts.ScanType
+	if len(scanType) == 0 {
+		scanType = v1.ScanTypeVulnerability
+	}
+	log.Infof("The scan type is %v", scanType)
 
 	if opts.ExecutionID == 0 {
 		extraAttrs := map[string]interface{}{
@@ -307,6 +315,9 @@ func (bc *basicController) Scan(ctx context.Context, artifact *ar.Artifact, opti
 			registrationKey: map[string]interface{}{
 				"id":   r.ID,
 				"name": r.Name,
+			},
+			enableCapabilityKey: map[string]interface{}{
+				"type": scanType,
 			},
 		}
 		if op := operator.FromContext(ctx); op != "" {
@@ -982,6 +993,11 @@ func (bc *basicController) launchScanJob(ctx context.Context, param *launchScanJ
 		return errors.Wrap(err, "scan controller: launch scan job")
 	}
 
+	scanType := param.ScanType
+	if len(scanType) == 0 {
+		scanType = v1.ScanTypeVulnerability
+	}
+
 	// Set job parameters
 	scanReq := &v1.ScanRequest{
 		Registry: &v1.Registry{
@@ -993,6 +1009,9 @@ func (bc *basicController) launchScanJob(ctx context.Context, param *launchScanJ
 			Digest:      param.Artifact.Digest,
 			Tag:         param.Tag,
 			MimeType:    param.Artifact.ManifestMediaType,
+		},
+		RequestType: &v1.ScanType{
+			Type: scanType,
 		},
 	}
 
@@ -1036,10 +1055,11 @@ func (bc *basicController) launchScanJob(ctx context.Context, param *launchScanJ
 	// keep the report uuids in array so that when ?| operator support by the FilterRaw method of beego's orm
 	// we can list the tasks of the scan reports by one SQL
 	extraAttrs := map[string]interface{}{
-		artifactIDKey:  param.Artifact.ID,
-		artifactTagKey: param.Tag,
-		robotIDKey:     robot.ID,
-		reportUUIDsKey: reportUUIDs,
+		artifactIDKey:       param.Artifact.ID,
+		artifactTagKey:      param.Tag,
+		robotIDKey:          robot.ID,
+		reportUUIDsKey:      reportUUIDs,
+		enableCapabilityKey: map[string]string{"type": scanReq.RequestType.Type},
 	}
 
 	_, err = bc.taskMgr.Create(ctx, param.ExecutionID, j, extraAttrs)

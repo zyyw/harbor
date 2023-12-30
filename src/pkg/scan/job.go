@@ -184,6 +184,8 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 	var authorization string
 	var tokenURL string
 
+	myLogger.Infof("The job request type is %v", req.RequestType.Type)
+
 	authType, _ := extractAuthType(params)
 	if authType == authorizationBearer {
 		tokenURL, err = getInternalTokenServiceEndpoint(ctx)
@@ -237,6 +239,7 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 					myLogger.Debugf("check scan report for mime %s at %s", m, t.Format("2006/01/02 15:04:05"))
 
 					rawReport, err := client.GetScanReport(resp.ID, m)
+					myLogger.Infof("get scan report %v", rawReport)
 					if err != nil {
 						// Not ready yet
 						if notReadyErr, ok := err.(*v1.ReportNotReadyError); ok {
@@ -326,6 +329,7 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 		// this is required since the top level layers relay on the vuln.Report struct that
 		// contains additional metadata within the report which if stored in the new columns within the scan_report table
 		// would be redundant
+		myLogger.Infof("report data is %v", reportData)
 		if err := report.Mgr.UpdateReportData(ctx.SystemContext(), rp.UUID, reportData); err != nil {
 			myLogger.Errorf("Failed to update report data for report %s, error %v", rp.UUID, err)
 
