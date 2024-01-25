@@ -238,7 +238,7 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 
 					myLogger.Debugf("check scan report for mime %s at %s", m, t.Format("2006/01/02 15:04:05"))
 					parameters := map[string]string{}
-					// default using application/spdx+json
+					// default using application/spdx+json todo:
 					if req.RequestType[0].Type == "sbom" {
 						parameters["sbom_media_type"] = "application/spdx+json"
 					}
