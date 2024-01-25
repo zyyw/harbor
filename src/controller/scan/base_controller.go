@@ -259,7 +259,7 @@ func (bc *basicController) Scan(ctx context.Context, artifact *ar.Artifact, opti
 		launchScanJobParams []*launchScanJobParam
 	)
 	for _, art := range artifacts {
-		reports, err := bc.makeReportPlaceholder(ctx, r, art)
+		reports, err := bc.makeReportPlaceholder(ctx, r, art, opts)
 		if err != nil {
 			if errors.IsConflictErr(err) {
 				errs = append(errs, err)
@@ -552,8 +552,8 @@ func (bc *basicController) startScanAll(ctx context.Context, executionID int64) 
 	return nil
 }
 
-func (bc *basicController) makeReportPlaceholder(ctx context.Context, r *scanner.Registration, art *ar.Artifact) ([]*scan.Report, error) {
-	mimeTypes := r.GetProducesMimeTypes(art.ManifestMediaType)
+func (bc *basicController) makeReportPlaceholder(ctx context.Context, r *scanner.Registration, art *ar.Artifact, opts *Options) ([]*scan.Report, error) {
+	mimeTypes := r.GetProducesMimeTypes(art.ManifestMediaType, opts.ScanType)
 
 	oldReports, err := bc.manager.GetBy(bc.cloneCtx(ctx), art.Digest, r.UUID, mimeTypes)
 	if err != nil {
@@ -580,7 +580,7 @@ func (bc *basicController) makeReportPlaceholder(ctx context.Context, r *scanner
 
 	var reports []*scan.Report
 
-	for _, pm := range r.GetProducesMimeTypes(art.ManifestMediaType) {
+	for _, pm := range r.GetProducesMimeTypes(art.ManifestMediaType, opts.ScanType) {
 		report := &scan.Report{
 			Digest:           art.Digest,
 			RegistrationUUID: r.UUID,
@@ -1010,8 +1010,10 @@ func (bc *basicController) launchScanJob(ctx context.Context, param *launchScanJ
 			Tag:         param.Tag,
 			MimeType:    param.Artifact.ManifestMediaType,
 		},
-		RequestType: &v1.ScanType{
-			Type: scanType,
+		RequestType: []*v1.ScanType{
+			{
+				Type: scanType,
+			},
 		},
 	}
 
@@ -1059,7 +1061,7 @@ func (bc *basicController) launchScanJob(ctx context.Context, param *launchScanJ
 		artifactTagKey:      param.Tag,
 		robotIDKey:          robot.ID,
 		reportUUIDsKey:      reportUUIDs,
-		enableCapabilityKey: map[string]string{"type": scanReq.RequestType.Type},
+		enableCapabilityKey: map[string]string{"type": scanReq.RequestType[0].Type},
 	}
 
 	_, err = bc.taskMgr.Create(ctx, param.ExecutionID, j, extraAttrs)

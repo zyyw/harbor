@@ -184,7 +184,7 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 	var authorization string
 	var tokenURL string
 
-	myLogger.Infof("The job request type is %v", req.RequestType.Type)
+	myLogger.Infof("The job request type is %v", req.RequestType[0].Type)
 
 	authType, _ := extractAuthType(params)
 	if authType == authorizationBearer {
@@ -237,8 +237,12 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 					}
 
 					myLogger.Debugf("check scan report for mime %s at %s", m, t.Format("2006/01/02 15:04:05"))
-
-					rawReport, err := client.GetScanReport(resp.ID, m)
+					parameters := map[string]string{}
+					// default using application/spdx+json
+					if req.RequestType[0].Type == "sbom" {
+						parameters["sbom_media_type"] = "application/spdx+json"
+					}
+					rawReport, err := client.GetScanReport(resp.ID, m, parameters)
 					myLogger.Infof("get scan report %v", rawReport)
 					if err != nil {
 						// Not ready yet
@@ -362,6 +366,13 @@ func ExtractScanReq(params job.Parameters) (*v1.ScanRequest, error) {
 	if err := req.FromJSON(jsonData); err != nil {
 		return nil, err
 	}
+	if req.RequestType[0].Type == v1.ScanTypeVulnerability && len(req.RequestType[0].ProducesMimeTypes) == 0 {
+		req.RequestType[0].ProducesMimeTypes = []string{v1.MimeTypeGenericVulnerabilityReport}
+	} else if req.RequestType[0].Type == v1.ScanTypeSbom {
+		req.RequestType[0].ProducesMimeTypes = []string{v1.MimeTypeSBOMReport}
+		req.RequestType[0].Parameters = map[string]interface{}{"sbom_media_types": []string{"application/spdx+json"}}
+	}
+
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
@@ -396,8 +407,9 @@ func removeScanAuthInfo(sr *v1.ScanRequest) string {
 		Artifact: sr.Artifact,
 		Registry: &v1.Registry{
 			URL:           sr.Registry.URL,
-			Authorization: "[HIDDEN]",
+			Authorization: sr.Registry.Authorization,
 		},
+		RequestType: sr.RequestType,
 	}
 
 	str, err := req.ToJSON()

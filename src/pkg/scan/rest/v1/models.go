@@ -100,7 +100,7 @@ func (md *ScannerAdapterMetadata) Validate() error {
 		// either of v1.MimeTypeNativeReport OR v1.MimeTypeGenericVulnerabilityReport is required
 		found = false
 		for _, pm := range ca.ProducesMimeTypes {
-			if pm == MimeTypeNativeReport || pm == MimeTypeGenericVulnerabilityReport {
+			if pm == MimeTypeNativeReport || pm == MimeTypeGenericVulnerabilityReport || pm == MimeTypeSBOMReport {
 				found = true
 				break
 			}
@@ -174,7 +174,7 @@ type ScanRequest struct {
 	// Artifact to be scanned.
 	Artifact *Artifact `json:"artifact"`
 	// RequestType
-	RequestType *ScanType `json:"enabled_capabilities"`
+	RequestType []*ScanType `json:"enabled_capabilities"`
 }
 
 // ScanType represent the type of the scan request
@@ -182,9 +182,9 @@ type ScanType struct {
 	// Type sets the type of the scan, it could be sbom or vulnerability, default is vulnerability
 	Type string `json:"type"`
 	// ProducesMimeTypes defines scanreport should be
-	ProducesMimeTypes []string `json:"producesMimeTypes"`
+	ProducesMimeTypes []string `json:"produces_mime_types"`
 	// Parameters extra parameters
-	Parameters map[string]string `json:"parameters"`
+	Parameters map[string]interface{} `json:"parameters"`
 }
 
 // FromJSON parses ScanRequest from json data
