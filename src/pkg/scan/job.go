@@ -192,7 +192,7 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 		if err != nil {
 			return errors.Wrap(err, "scan job: get token service endpoint")
 		}
-		authorization, err = makeBearerAuthorization(robotAccount, tokenURL, req.Artifact.Repository)
+		authorization, err = makeBearerAuthorization(robotAccount, tokenURL, req.Artifact.Repository, "pull")
 	} else {
 		authorization, err = makeBasicAuthorization(robotAccount)
 	}
@@ -334,6 +334,17 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 		// contains additional metadata within the report which if stored in the new columns within the scan_report table
 		// would be redundant
 		myLogger.Infof("report data is %v", reportData)
+		if req.RequestType[0].Type == v1.ScanTypeSbom {
+			subject := fmt.Sprintf("%s/%s:%s", req.Registry, req.Artifact.Repository, req.Artifact.Digest)
+			mediaType := "application/vnd.goharbor.harbor.sbom.v1"
+			account := &model.Robot{Name: "admin", Secret: "Harbor12345"}
+			token, err := makeBearerAuthorization(account, tokenURL, req.Artifact.Repository, "push")
+			if err != nil {
+				return err
+			}
+			// upload sbom as artifact accessory
+			createAccessoryForImage([]byte(reportData), subject, mediaType, token)
+		}
 		if err := report.Mgr.UpdateReportData(ctx.SystemContext(), rp.UUID, reportData); err != nil {
 			myLogger.Errorf("Failed to update report data for report %s, error %v", rp.UUID, err)
 
@@ -565,7 +576,7 @@ func makeBasicAuthorization(robotAccount *model.Robot) (string, error) {
 }
 
 // makeBearerAuthorization creates bearer token from a robot account
-func makeBearerAuthorization(robotAccount *model.Robot, tokenURL string, repository string) (string, error) {
+func makeBearerAuthorization(robotAccount *model.Robot, tokenURL string, repository string, action string) (string, error) {
 	u, err := url.Parse(tokenURL)
 	if err != nil {
 		return "", err
@@ -573,7 +584,7 @@ func makeBearerAuthorization(robotAccount *model.Robot, tokenURL string, reposit
 
 	query := u.Query()
 	query.Add("service", service)
-	query.Add("scope", fmt.Sprintf("repository:%s:pull", repository))
+	query.Add("scope", fmt.Sprintf("repository:%s:%s", action, repository))
 	u.RawQuery = query.Encode()
 
 	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
