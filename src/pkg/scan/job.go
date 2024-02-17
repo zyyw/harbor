@@ -335,7 +335,9 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 		// would be redundant
 		myLogger.Infof("report data is %v", reportData)
 		if req.RequestType[0].Type == v1.ScanTypeSbom {
-			subject := fmt.Sprintf("%s/%s:%s", req.Registry, req.Artifact.Repository, req.Artifact.Digest)
+
+			subject := fmt.Sprintf("%s/%s:%s", req.Registry.URL, req.Artifact.Repository, req.Artifact.Digest)
+			myLogger.Infof("subject is %v", subject)
 			mediaType := "application/vnd.goharbor.harbor.sbom.v1"
 			account := &model.Robot{Name: "admin", Secret: "Harbor12345"}
 			token, err := makeBearerAuthorization(account, tokenURL, req.Artifact.Repository, "push")
