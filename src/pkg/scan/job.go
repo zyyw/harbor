@@ -340,10 +340,14 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 			account := &model.Robot{Name: "admin", Secret: "Harbor12345"}
 			token, err := makeBearerAuthorization(account, tokenURL, req.Artifact.Repository, "push")
 			if err != nil {
+				myLogger.Errorf("failed to create token, error %v", err)
 				return err
 			}
 			// upload sbom as artifact accessory
-			createAccessoryForImage([]byte(reportData), subject, mediaType, token)
+			err = createAccessoryForImage([]byte(reportData), subject, mediaType, token)
+			if err != nil {
+				myLogger.Errorf("error when create accessory from image %v", err)
+			}
 		}
 		if err := report.Mgr.UpdateReportData(ctx.SystemContext(), rp.UUID, reportData); err != nil {
 			myLogger.Errorf("Failed to update report data for report %s, error %v", rp.UUID, err)
