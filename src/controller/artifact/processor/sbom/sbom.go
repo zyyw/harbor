@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	ArtifactTypeSBOM = "sbom"
+	ArtifactTypeSBOM = "SBOM"
 	mediaType        = "application/vnd.goharbor.harbor.sbom.v1"
 )
 
