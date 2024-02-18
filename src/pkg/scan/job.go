@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -183,15 +184,17 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 
 	var authorization string
 	var tokenURL string
+	tokenURL, err = getInternalTokenServiceEndpoint(ctx)
+	if err != nil {
+		return errors.Wrap(err, "scan job: get token service endpoint")
+	}
+
+	myLogger.Infof("The token url is %v", tokenURL)
 
 	myLogger.Infof("The job request type is %v", req.RequestType[0].Type)
 
 	authType, _ := extractAuthType(params)
 	if authType == authorizationBearer {
-		tokenURL, err = getInternalTokenServiceEndpoint(ctx)
-		if err != nil {
-			return errors.Wrap(err, "scan job: get token service endpoint")
-		}
 		authorization, err = makeBearerAuthorization(robotAccount, tokenURL, req.Artifact.Repository, "pull")
 	} else {
 		authorization, err = makeBasicAuthorization(robotAccount)
@@ -335,9 +338,9 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 		// would be redundant
 		myLogger.Infof("report data is %v", reportData)
 		if req.RequestType[0].Type == v1.ScanTypeSbom {
-
-			subject := fmt.Sprintf("%s/%s:%s", req.Registry.URL, req.Artifact.Repository, req.Artifact.Digest)
-			myLogger.Infof("subject is %v", subject)
+			// subject := fmt.Sprintf("%s/%s@%s", req.Registry.URL, req.Artifact.Repository, req.Artifact.Digest)
+			// should use EXT_ENDPOINT
+			subject := fmt.Sprintf("%s/%s@%s", "10.202.250.197", req.Artifact.Repository, req.Artifact.Digest)
 			mediaType := "application/vnd.goharbor.harbor.sbom.v1"
 			account := &model.Robot{Name: "admin", Secret: "Harbor12345"}
 			token, err := makeBearerAuthorization(account, tokenURL, req.Artifact.Repository, "push")
@@ -345,7 +348,10 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 				myLogger.Errorf("failed to create token, error %v", err)
 				return err
 			}
+			token = strings.TrimPrefix(token, "Bearer ")
 			// upload sbom as artifact accessory
+			myLogger.Infof("subject: %v", subject)
+			myLogger.Infof("token: %v", token)
 			err = createAccessoryForImage([]byte(reportData), subject, mediaType, token)
 			if err != nil {
 				myLogger.Errorf("error when create accessory from image %v", err)
