@@ -590,7 +590,7 @@ func makeBearerAuthorization(robotAccount *model.Robot, tokenURL string, reposit
 
 	query := u.Query()
 	query.Add("service", service)
-	query.Add("scope", fmt.Sprintf("repository:%s:%s", action, repository))
+	query.Add("scope", fmt.Sprintf("repository:%s:%s", repository, action))
 	u.RawQuery = query.Encode()
 
 	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
