@@ -39,7 +39,7 @@ func (m *Processor) AbstractAddition(ctx context.Context, art *artifact.Artifact
 		return nil, errors.New(nil).WithCode(errors.NotFoundCode).WithMessage("The sbom is not found with error %v", err)
 	}
 
-	mediaType, payload, err := man.Payload()
+	_, payload, err := man.Payload()
 	if err != nil {
 		return nil, errors.New(nil).WithCode(errors.NotFoundCode).WithMessage("The sbom is not found with error %v", err)
 	}
@@ -48,7 +48,7 @@ func (m *Processor) AbstractAddition(ctx context.Context, art *artifact.Artifact
 		return nil, err
 	}
 	for _, layer := range manifest.Layers {
-		// chart do have two layers, one is config, we should resolve the other one.
+		// sbom artifact do have two layers, one is config, we should resolve the other one.
 		layerDgst := layer.Digest.String()
 		if layerDgst != manifest.Config.Digest.String() {
 			_, blob, err := m.RegCli.PullBlob(art.RepositoryName, layerDgst)
@@ -67,5 +67,4 @@ func (m *Processor) AbstractAddition(ctx context.Context, art *artifact.Artifact
 		}
 	}
 	return nil, errors.New(nil).WithCode(errors.NotFoundCode).WithMessage("The sbom is not found")
-
 }
