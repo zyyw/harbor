@@ -338,9 +338,8 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 		// would be redundant
 		myLogger.Infof("report data is %v", reportData)
 		if req.RequestType[0].Type == v1.ScanTypeSbom {
-			// subject := fmt.Sprintf("%s/%s@%s", req.Registry.URL, req.Artifact.Repository, req.Artifact.Digest)
-			// should use EXT_ENDPOINT
-			subject := fmt.Sprintf("%s/%s@%s", "10.202.250.197", req.Artifact.Repository, req.Artifact.Digest)
+			// should use the external registry name as the subject
+			subject := fmt.Sprintf("%s/%s@%s", getRegistryServer(ctx), req.Artifact.Repository, req.Artifact.Digest)
 			mediaType := "application/vnd.goharbor.harbor.sbom.v1"
 			account := &model.Robot{Name: "admin", Secret: "Harbor12345"}
 			token, err := makeBearerAuthorization(account, tokenURL, req.Artifact.Repository, "push")
@@ -367,6 +366,18 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 	}
 
 	return nil
+}
+
+// extract server name from config
+func getRegistryServer(ctx job.Context) string {
+	cfgMgr, ok := config.FromContext(ctx.SystemContext())
+	if ok {
+		extUrl := cfgMgr.Get(ctx.SystemContext(), common.ExtEndpoint).GetString()
+		server := strings.TrimPrefix("https://", extUrl)
+		server = strings.TrimPrefix("http://", server)
+		return server
+	}
+	return ""
 }
 
 // ExtractScanReq extracts the scan request from the job parameters.
