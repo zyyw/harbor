@@ -371,12 +371,17 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 // extract server name from config
 func getRegistryServer(ctx job.Context) string {
 	cfgMgr, ok := config.FromContext(ctx.SystemContext())
+	myLogger := ctx.GetLogger()
+
 	if ok {
 		extUrl := cfgMgr.Get(ctx.SystemContext(), common.ExtEndpoint).GetString()
-		server := strings.TrimPrefix("https://", extUrl)
-		server = strings.TrimPrefix("http://", server)
+		myLogger.Infof("The external url is %v", extUrl)
+		server := strings.TrimPrefix(extUrl, "https://")
+		server = strings.TrimPrefix(server, "http://")
+		myLogger.Infof("The server is %v", server)
 		return server
 	}
+	myLogger.Error("empty registry server!")
 	return ""
 }
 
