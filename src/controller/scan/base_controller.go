@@ -572,6 +572,7 @@ func (bc *basicController) makeReportPlaceholder(ctx context.Context, r *scanner
 		}
 
 		for _, oldReport := range oldReports {
+			// TODO: if there is any sbom digest information, just delete the artifact
 			if err := bc.manager.Delete(ctx, oldReport.UUID); err != nil {
 				return nil, err
 			}

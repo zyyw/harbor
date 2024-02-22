@@ -341,6 +341,7 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 			// should use the external registry name as the subject
 			subject := fmt.Sprintf("%s/%s@%s", getRegistryServer(ctx), req.Artifact.Repository, req.Artifact.Digest)
 			mediaType := "application/vnd.goharbor.harbor.sbom.v1"
+			// FIXME: remove hardcode
 			account := &model.Robot{Name: "admin", Secret: "Harbor12345"}
 			token, err := makeBearerAuthorization(account, tokenURL, req.Artifact.Repository, "push")
 			if err != nil {
@@ -351,10 +352,20 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 			// upload sbom as artifact accessory
 			myLogger.Infof("subject: %v", subject)
 			myLogger.Infof("token: %v", token)
-			err = createAccessoryForImage([]byte(reportData), subject, mediaType, token)
+			dgst, err := createAccessoryForImage([]byte(reportData), subject, mediaType, token)
 			if err != nil {
 				myLogger.Errorf("error when create accessory from image %v", err)
 			}
+
+			// store digest in the report field, it is used in the sbom status summary and makeReportPlaceholder to delete previous sbom
+			myLogger.Infof("acccessory image digest is %v", dgst)
+			reportMap := map[string]string{}
+			reportMap["sbom_digest"] = dgst
+			rep, err := json.Marshal(reportMap)
+			if err != nil {
+				return err
+			}
+			reportData = string(rep)
 		}
 		if err := report.Mgr.UpdateReportData(ctx.SystemContext(), rp.UUID, reportData); err != nil {
 			myLogger.Errorf("Failed to update report data for report %s, error %v", rp.UUID, err)

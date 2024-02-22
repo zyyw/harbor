@@ -111,7 +111,7 @@ func getBearerToken(harborURL, username, password string, repository string, com
 	return fmt.Sprintf("%s", token), nil
 }
 
-func createAccessoryForImage(content []byte, subject string, artifactMediaType string, token string) error {
+func createAccessoryForImage(content []byte, subject string, artifactMediaType string, token string) (string, error) {
 	putOptions := putOptions{
 		Insecure: true,
 		Subject:  subject,
@@ -126,21 +126,21 @@ func createAccessoryForImage(content []byte, subject string, artifactMediaType s
 		Layer: static.NewLayer(ref.bytes, ref.mediaType),
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
 	targetRef, err := name.ParseReference(putOptions.Subject, putOptions.NameOptions()...)
 	if err != nil {
-		return err
+		return "", err
 	}
 	// remoteOpts := append(ref.RemoteOptions(), remote.WithAuthFromKeychain(authn.DefaultKeychain))
 	remoteOpts := append(ref.RemoteOptions(), remote.WithAuth(&authn.Bearer{Token: token}))
 	ref.targetReference = targetRef
 	targetDesc, err := remote.Head(ref.targetReference, remoteOpts...)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if targetDesc == nil {
-		return fmt.Errorf("targetDesc is nil")
+		return "", fmt.Errorf("targetDesc is nil")
 	}
 
 	img = mutate.MediaType(img, ocispec.MediaTypeImageManifest)
@@ -151,15 +151,14 @@ func createAccessoryForImage(content []byte, subject string, artifactMediaType s
 
 	tag, err := ref.Tag(img)
 	if err != nil {
-		return err
+		return "", err
 	}
 	digest, err := img.Digest()
 	if err != nil {
-		return err
+		return "", err
 	}
-	fmt.Printf("image digest %v\n", digest.String())
 	if err := remote.Write(tag, img, remoteOpts...); err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return digest.String(), nil
 }
