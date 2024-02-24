@@ -17,6 +17,7 @@ package scan
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -42,6 +43,7 @@ import (
 	"github.com/goharbor/harbor/src/pkg/accessory"
 	allowlist "github.com/goharbor/harbor/src/pkg/allowlist/models"
 	"github.com/goharbor/harbor/src/pkg/permission/types"
+	"github.com/goharbor/harbor/src/pkg/registry"
 	"github.com/goharbor/harbor/src/pkg/robot/model"
 	sca "github.com/goharbor/harbor/src/pkg/scan"
 	"github.com/goharbor/harbor/src/pkg/scan/dao/scan"
@@ -220,6 +222,7 @@ func (bc *basicController) collectScanningArtifacts(ctx context.Context, r *scan
 
 // Scan ...
 func (bc *basicController) Scan(ctx context.Context, artifact *ar.Artifact, options ...Option) error {
+	log.Info("Enter scan artifact")
 	if artifact == nil {
 		return errors.New("nil artifact to scan")
 	}
@@ -554,7 +557,7 @@ func (bc *basicController) startScanAll(ctx context.Context, executionID int64) 
 
 func (bc *basicController) makeReportPlaceholder(ctx context.Context, r *scanner.Registration, art *ar.Artifact, opts *Options) ([]*scan.Report, error) {
 	mimeTypes := r.GetProducesMimeTypes(art.ManifestMediaType, opts.ScanType)
-
+	log.Info("enter makeReportPlaceholder")
 	oldReports, err := bc.manager.GetBy(bc.cloneCtx(ctx), art.Digest, r.UUID, mimeTypes)
 	if err != nil {
 		return nil, err
@@ -572,7 +575,10 @@ func (bc *basicController) makeReportPlaceholder(ctx context.Context, r *scanner
 		}
 
 		for _, oldReport := range oldReports {
-			// TODO: if there is any sbom digest information, just delete the artifact
+			if err := deleteArtifactAccessory(oldReport.Report); err != nil {
+				log.Errorf("failed to delete artifact accessory %v", err)
+				return nil, err
+			}
 			if err := bc.manager.Delete(ctx, oldReport.UUID); err != nil {
 				return nil, err
 			}
@@ -606,6 +612,26 @@ func (bc *basicController) makeReportPlaceholder(ctx context.Context, r *scanner
 	}
 
 	return reports, nil
+}
+
+func deleteArtifactAccessory(report string) error {
+	if len(report) == 0 {
+		return nil
+	}
+	reportMap := map[string]string{}
+	if err := json.Unmarshal([]byte(report), reportMap); err != nil {
+		return nil
+	}
+	repo := reportMap["sbom_repository"]
+	dgst := reportMap["sbom_digest"]
+	if len(repo) > 0 && len(dgst) > 0 {
+		err := registry.Cli.DeleteManifest(repo, dgst)
+		if err != nil {
+			return err
+		}
+		log.Infof("artifact accessory digest deleted %v:%v", repo, dgst)
+	}
+	return nil
 }
 
 // GetReport ...

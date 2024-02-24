@@ -360,6 +360,7 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 			// store digest in the report field, it is used in the sbom status summary and makeReportPlaceholder to delete previous sbom
 			myLogger.Infof("acccessory image digest is %v", dgst)
 			reportMap := map[string]string{}
+			reportMap["sbom_repository"] = req.Artifact.Repository
 			reportMap["sbom_digest"] = dgst
 			rep, err := json.Marshal(reportMap)
 			if err != nil {
