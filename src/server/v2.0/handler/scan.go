@@ -24,6 +24,7 @@ import (
 	"github.com/goharbor/harbor/src/controller/artifact"
 	"github.com/goharbor/harbor/src/controller/scan"
 	"github.com/goharbor/harbor/src/lib/errors"
+	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/pkg/distribution"
 	operation "github.com/goharbor/harbor/src/server/v2.0/restapi/operations/scan"
 )
@@ -85,7 +86,7 @@ func (s *scanAPI) ScanArtifact(ctx context.Context, params operation.ScanArtifac
 	if params.ScanRequestType != nil && validScanType(params.ScanRequestType.ScanType) {
 		options = append(options, scan.WithScanType(params.ScanRequestType.ScanType))
 	}
-
+	log.Infof("scan controller artifact %+v, options %+v", artifact, options)
 	if err := s.scanCtl.Scan(ctx, artifact, options...); err != nil {
 		return s.SendError(ctx, err)
 	}
