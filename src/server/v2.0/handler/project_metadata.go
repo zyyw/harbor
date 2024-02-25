@@ -143,7 +143,7 @@ func (p *projectMetadataAPI) validate(metas map[string]string) (map[string]strin
 
 	switch key {
 	case proModels.ProMetaPublic, proModels.ProMetaEnableContentTrust, proModels.ProMetaEnableContentTrustCosign,
-		proModels.ProMetaPreventVul, proModels.ProMetaAutoScan, proModels.ProMetaReuseSysCVEAllowlist:
+		proModels.ProMetaPreventVul, proModels.ProMetaAutoScan, proModels.ProMetaReuseSysCVEAllowlist, proModels.ProMetaAutoGenSBOM:
 		v, err := strconv.ParseBool(value)
 		if err != nil {
 			return nil, errors.New(nil).WithCode(errors.BadRequestCode).WithMessage("invalid value: %s", value)
