@@ -42,8 +42,8 @@ import (
 	"github.com/goharbor/harbor/src/lib/retry"
 	"github.com/goharbor/harbor/src/pkg/accessory"
 	allowlist "github.com/goharbor/harbor/src/pkg/allowlist/models"
+	"github.com/goharbor/harbor/src/pkg/artifact"
 	"github.com/goharbor/harbor/src/pkg/permission/types"
-	"github.com/goharbor/harbor/src/pkg/registry"
 	"github.com/goharbor/harbor/src/pkg/robot/model"
 	sca "github.com/goharbor/harbor/src/pkg/scan"
 	"github.com/goharbor/harbor/src/pkg/scan/dao/scan"
@@ -60,6 +60,8 @@ var (
 	DefaultController = NewController()
 
 	errScanAllStopped = errors.New("scanAll stopped")
+
+	sbomMimeType = "application/vnd.security.sbom.report+json; version=1.0"
 )
 
 // const definitions
@@ -243,6 +245,7 @@ func (bc *basicController) Scan(ctx context.Context, artifact *ar.Artifact, opti
 	}
 
 	artifacts, scannable, err := bc.collectScanningArtifacts(ctx, r, artifact)
+	log.Infof("scannable=%v", scannable)
 	if err != nil {
 		return err
 	}
@@ -557,7 +560,7 @@ func (bc *basicController) startScanAll(ctx context.Context, executionID int64) 
 
 func (bc *basicController) makeReportPlaceholder(ctx context.Context, r *scanner.Registration, art *ar.Artifact, opts *Options) ([]*scan.Report, error) {
 	mimeTypes := r.GetProducesMimeTypes(art.ManifestMediaType, opts.ScanType)
-	log.Info("enter makeReportPlaceholder")
+	log.Infof("makeReportPlaceholder, digest %v, scanType %v, mineTypes=%+v", art.Digest, opts.ScanType, mimeTypes)
 	oldReports, err := bc.manager.GetBy(bc.cloneCtx(ctx), art.Digest, r.UUID, mimeTypes)
 	if err != nil {
 		return nil, err
@@ -569,13 +572,14 @@ func (bc *basicController) makeReportPlaceholder(ctx context.Context, r *scanner
 
 	if len(oldReports) > 0 {
 		for _, oldReport := range oldReports {
+			log.Infof("current report %v", oldReport.Report)
 			if !job.Status(oldReport.Status).Final() {
 				return nil, errors.ConflictError(nil).WithMessage("a previous scan process is %s", oldReport.Status)
 			}
 		}
 
 		for _, oldReport := range oldReports {
-			if err := deleteArtifactAccessory(oldReport.Report); err != nil {
+			if err := deleteArtifactAccessory(ctx, oldReport.Report); err != nil {
 				log.Errorf("failed to delete artifact accessory %v", err)
 				return nil, err
 			}
@@ -614,22 +618,44 @@ func (bc *basicController) makeReportPlaceholder(ctx context.Context, r *scanner
 	return reports, nil
 }
 
-func deleteArtifactAccessory(report string) error {
+func deleteArtifactAccessory(ctx context.Context, report string) error {
+	log.Infof("deleteArtifactAccessory, report %v", report)
 	if len(report) == 0 {
 		return nil
 	}
 	reportMap := map[string]string{}
-	if err := json.Unmarshal([]byte(report), reportMap); err != nil {
+	if err := json.Unmarshal([]byte(report), &reportMap); err != nil {
+		log.Errorf("fail to unmarshal %v", err)
 		return nil
 	}
 	repo := reportMap["sbom_repository"]
 	dgst := reportMap["sbom_digest"]
+	accessoryMgr := accessory.NewManager()
+	artifactMgr := artifact.NewManager()
 	if len(repo) > 0 && len(dgst) > 0 {
-		err := registry.Cli.DeleteManifest(repo, dgst)
+		log.Infof("found artifact accessory digest %v:%v", repo, dgst)
+		err := accessoryMgr.DeleteAccessories(ctx, q.New(q.KeyWords{"Digest": dgst, "SubjectArtifactRepo": repo}))
 		if err != nil {
+			log.Errorf("fail to delete artifact manifest %v", err)
 			return err
 		}
 		log.Infof("artifact accessory digest deleted %v:%v", repo, dgst)
+		art, err := artifactMgr.GetByDigest(ctx, repo, dgst)
+		if err != nil {
+			log.Errorf("fail to get artifact %v", err)
+			return err
+		}
+		if art == nil {
+			log.Errorf("fail to get artifact")
+			return nil
+		}
+		err = artifactMgr.Delete(ctx, art.ID)
+		if err != nil {
+			log.Errorf("fail to delete artifact %v", err)
+			return err
+		}
+		log.Infof("delete artifact %v", dgst)
+
 	}
 	return nil
 }
@@ -1179,7 +1205,11 @@ func (bc *basicController) assembleReports(ctx context.Context, reports ...*scan
 		} else {
 			report.Status = job.ErrorStatus.String()
 		}
-
+		if report.MimeType == sbomMimeType {
+			// do not update the report from rdb
+			log.Infof("current report content %v", report.Report)
+			continue
+		}
 		completeReport, err := bc.reportConverter.FromRelationalSchema(ctx, report.UUID, report.Digest, report.Report)
 		if err != nil {
 			return err

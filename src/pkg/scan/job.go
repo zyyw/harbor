@@ -60,6 +60,8 @@ const (
 	authorizationBasic  = "Basic"
 
 	service = "harbor-registry"
+
+	sbomMimeType = "application/vnd.goharbor.harbor.sbom.v1"
 )
 
 // CheckInReport defines model for checking in the scan report with specified mime.
@@ -340,7 +342,7 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 		if req.RequestType[0].Type == v1.ScanTypeSbom {
 			// should use the external registry name as the subject
 			subject := fmt.Sprintf("%s/%s@%s", getRegistryServer(ctx), req.Artifact.Repository, req.Artifact.Digest)
-			mediaType := "application/vnd.goharbor.harbor.sbom.v1"
+			mediaType := sbomMimeType
 			// FIXME: remove hardcode
 			account := &model.Robot{Name: "admin", Secret: "Harbor12345"}
 			token, err := makeBearerAuthorization(account, tokenURL, req.Artifact.Repository, "push")
