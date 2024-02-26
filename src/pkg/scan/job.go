@@ -39,6 +39,7 @@ import (
 	"github.com/goharbor/harbor/src/pkg/scan/postprocessors"
 	"github.com/goharbor/harbor/src/pkg/scan/report"
 	v1 "github.com/goharbor/harbor/src/pkg/scan/rest/v1"
+	"github.com/goharbor/harbor/src/pkg/scan/vuln"
 )
 
 const (
@@ -340,6 +341,15 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 		// would be redundant
 		myLogger.Infof("report data is %v", reportData)
 		if req.RequestType[0].Type == v1.ScanTypeSbom {
+			rpt := vuln.Report{}
+			err := json.Unmarshal([]byte(reportData), &rpt)
+			if err != nil {
+				return err
+			}
+			sbomContent, err := json.Marshal(rpt.Sbom)
+			if err != nil {
+				return err
+			}
 			// should use the external registry name as the subject
 			subject := fmt.Sprintf("%s/%s@%s", getRegistryServer(ctx), req.Artifact.Repository, req.Artifact.Digest)
 			mediaType := sbomMimeType
@@ -354,7 +364,7 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 			// upload sbom as artifact accessory
 			myLogger.Infof("subject: %v", subject)
 			myLogger.Infof("token: %v", token)
-			dgst, err := createAccessoryForImage([]byte(reportData), subject, mediaType, token)
+			dgst, err := createAccessoryForImage([]byte(sbomContent), subject, mediaType, token)
 			if err != nil {
 				myLogger.Errorf("error when create accessory from image %v", err)
 			}
