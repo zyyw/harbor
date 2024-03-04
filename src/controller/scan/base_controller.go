@@ -641,6 +641,10 @@ func deleteArtifactAccessory(ctx context.Context, report string) error {
 		}
 		log.Infof("artifact accessory digest deleted %v:%v", repo, dgst)
 		art, err := artifactMgr.GetByDigest(ctx, repo, dgst)
+		if errors.IsNotFoundErr(err) {
+			log.Errorf("artifact not found, skip to delete it")
+			return nil
+		}
 		if err != nil {
 			log.Errorf("fail to get artifact %v", err)
 			return err

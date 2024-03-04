@@ -28,12 +28,12 @@ const (
 )
 
 // NewVulAssembler returns vul assembler
-func NewVulAssembler(withScanOverview bool, mimeTypes []string) *VulAssembler {
+func NewVulAssembler(withScanOverview bool, withSBOMOverview bool, mimeTypes []string) *VulAssembler {
 	return &VulAssembler{
-		scanChecker: scan.NewChecker(),
-		scanCtl:     scan.DefaultController,
-
+		scanChecker:      scan.NewChecker(),
+		scanCtl:          scan.DefaultController,
 		withScanOverview: withScanOverview,
+		withSBOMOverview: withSBOMOverview,
 		mimeTypes:        mimeTypes,
 	}
 }
@@ -45,6 +45,7 @@ type VulAssembler struct {
 
 	artifacts        []*model.Artifact
 	withScanOverview bool
+	withSBOMOverview bool
 	mimeTypes        []string
 }
 
@@ -81,6 +82,13 @@ func (assembler *VulAssembler) Assemble(ctx context.Context) error {
 					artifact.ScanOverview = overview
 					break
 				}
+			}
+		}
+		log.Infof("with sbom overview %v", assembler.withSBOMOverview)
+		if assembler.withSBOMOverview {
+			artifact.SBOMOverView = map[string]interface{}{
+				"scan_status": "Complete",
+				"sbom_digest": "sha256:bba2c3e2bf4d37b55b94ffdf2503346e2481f9c70137916f13273dbddf0be287",
 			}
 		}
 	}
