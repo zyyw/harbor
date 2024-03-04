@@ -991,6 +991,12 @@ paths:
           type: boolean
           required: false
           default: false
+        - name: with_sbom_overview
+          in: query
+          description: Specify whether the generate sbom overview is include inside the returning artifacts
+          type: boolean
+          required: false
+          default: false          
         - name: with_signature
           in: query
           description: Specify whether the signature is included inside the tags of the returning artifacts. Only works when setting "with_tag=true"
@@ -6598,6 +6604,9 @@ definitions:
       scan_overview:
         $ref: '#/definitions/ScanOverview'
         description: The overview of the scan result.
+      sbom_overview:
+        $ref: '#/definitions/SBOMOverview'
+        description: The overview of the generate SBOM      
       accessories:
         type: array
         items:
@@ -6756,6 +6765,26 @@ definitions:
     description: 'The scan overview attached in the metadata of tag'
     additionalProperties:
       $ref: '#/definitions/NativeReportSummary'
+  SBOMOverview:
+    type: object
+    description: 'The generate SBOM overview information'
+    properties:
+      start_time:
+        type: string
+        format: date-time
+        description: 'The start time of the scan process that generating report'
+        example: '2006-01-02T14:04:05Z'
+      end_time:
+        type: string
+        format: date-time
+        description: 'The end time of the scan process that generating report'
+        example: '2006-01-02T15:04:05Z'
+      scan_status:
+        type: string
+        description: 'The status of the generate SBOM process'
+      sbom_digest:
+        type: string
+        description: 'The digest of the generated SBOM accessory'      
   NativeReportSummary:
     type: object
     description: 'The summary for the native report'
