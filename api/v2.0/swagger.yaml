@@ -6789,7 +6789,16 @@ definitions:
         description: 'The status of the generate SBOM process'
       sbom_digest:
         type: string
-        description: 'The digest of the generated SBOM accessory'      
+        description: 'The digest of the generated SBOM accessory'   
+      report_id:
+        type: string
+        description: 'id of the native scan report'
+        example: '5f62c830-f996-11e9-957f-0242c0a89008'   
+      duration: 
+        type: integer
+        format: int64
+        description: 'The seconds spent for generating the report'
+        example: 300
   NativeReportSummary:
     type: object
     description: 'The summary for the native report'
