@@ -16,6 +16,7 @@ package assembler
 
 import (
 	"context"
+	"time"
 
 	"github.com/goharbor/harbor/src/controller/scan"
 	"github.com/goharbor/harbor/src/lib"
@@ -87,9 +88,12 @@ func (assembler *VulAssembler) Assemble(ctx context.Context) error {
 		log.Infof("with sbom overview %v", assembler.withSBOMOverview)
 		if assembler.withSBOMOverview {
 			artifact.SBOMOverView = map[string]interface{}{
-				"scan_status": "Complete",
+				"start_time":  time.Now(),
+				"end_time":    time.Now(),
+				"scan_status": "Success",
 				"sbom_digest": "sha256:bba2c3e2bf4d37b55b94ffdf2503346e2481f9c70137916f13273dbddf0be287",
 			}
+
 		}
 	}
 

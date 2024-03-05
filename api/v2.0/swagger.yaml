@@ -1200,6 +1200,11 @@ paths:
         - $ref: '#/parameters/projectName'
         - $ref: '#/parameters/repositoryName'
         - $ref: '#/parameters/reference'
+        - name: stop_request_type
+          in: body
+          required: false
+          schema: 
+            $ref: '#/definitions/ScanRequestType'
       responses:
         '202':
           $ref: '#/responses/202'
@@ -8405,7 +8410,12 @@ definitions:
         default: ""
         description: Indicate the healthy of the registration
         example: "healthy"
-
+      capabilities:
+        type: object
+        description: Indicate the scanner's properties such as support_vulnerability or support_sbom
+        additionalProperties: True
+        example:  {"support_vulnerability": true, "support_sbom": true}
+    
   ScannerRegistrationReq:
     type: object
     required:
