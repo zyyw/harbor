@@ -16,11 +16,11 @@ package assembler
 
 import (
 	"context"
-	"time"
 
 	"github.com/goharbor/harbor/src/controller/scan"
 	"github.com/goharbor/harbor/src/lib"
 	"github.com/goharbor/harbor/src/lib/log"
+	v1 "github.com/goharbor/harbor/src/pkg/scan/rest/v1"
 	"github.com/goharbor/harbor/src/server/v2.0/handler/model"
 )
 
@@ -86,14 +86,19 @@ func (assembler *VulAssembler) Assemble(ctx context.Context) error {
 			}
 		}
 		log.Infof("with sbom overview %v", assembler.withSBOMOverview)
+		overview, err := assembler.scanCtl.GetSummary(ctx, &artifact.Artifact, []string{v1.MimeTypeSBOMReport})
+		if err != nil {
+			log.Warningf("get scan summary of artifact %s@%s for %s failed, error:%v", artifact.RepositoryName, artifact.Digest, v1.MimeTypeSBOMReport, err)
+		}
+		log.Infof("over view is %v", overview)
 		if assembler.withSBOMOverview {
 			artifact.SBOMOverView = map[string]interface{}{
-				"start_time":  time.Now(),
-				"end_time":    time.Now(),
-				"scan_status": "Success",
-				"sbom_digest": "sha256:bba2c3e2bf4d37b55b94ffdf2503346e2481f9c70137916f13273dbddf0be287",
+				"start_time":  overview["start_time"],
+				"end_time":    overview["end_time"],
+				"scan_status": overview["scan_status"],
+				"sbom_digest": overview["sbom_digest"],
+				"duration":    overview["duration"],
 			}
-
 		}
 	}
 

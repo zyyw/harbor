@@ -149,7 +149,7 @@ func (j *Job) Validate(params job.Parameters) error {
 func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 	// Get logger
 	myLogger := ctx.GetLogger()
-
+	startTime := time.Now()
 	// shouldStop checks if the job should be stopped
 	shouldStop := func() bool {
 		if cmd, ok := ctx.OPCommand(); ok && cmd == job.StopCommand {
@@ -371,7 +371,12 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 
 			// store digest in the report field, it is used in the sbom status summary and makeReportPlaceholder to delete previous sbom
 			myLogger.Infof("acccessory image digest is %v", dgst)
-			reportMap := map[string]string{}
+			endTime := time.Now()
+			reportMap := map[string]interface{}{}
+			reportMap["start_time"] = startTime
+			reportMap["end_time"] = endTime
+			reportMap["duration"] = int64(endTime.Sub(startTime).Seconds())
+			reportMap["scan_status"] = "Success"
 			reportMap["sbom_repository"] = req.Artifact.Repository
 			reportMap["sbom_digest"] = dgst
 			rep, err := json.Marshal(reportMap)

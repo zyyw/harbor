@@ -749,7 +749,9 @@ func (bc *basicController) GetSummary(ctx context.Context, artifact *ar.Artifact
 	if err != nil {
 		return nil, err
 	}
-
+	if len(mimeTypes) > 0 && mimeTypes[0] == v1.MimeTypeSBOMReport {
+		return GetSummaryFromSBOMReport(rps)
+	}
 	summaries := make(map[string]interface{}, len(rps))
 	for _, rp := range rps {
 		sum, err := report.GenerateSummary(rp)
@@ -770,6 +772,22 @@ func (bc *basicController) GetSummary(ctx context.Context, artifact *ar.Artifact
 	}
 
 	return summaries, nil
+}
+
+func GetSummaryFromSBOMReport(rpts []*scan.Report) (map[string]interface{}, error) {
+	result := map[string]interface{}{}
+	if len(rpts) == 0 {
+		return result, nil
+	}
+	reportContent := rpts[0].Report
+	if len(reportContent) == 0 {
+		log.Info("no content for current report")
+	}
+	err := json.Unmarshal([]byte(reportContent), &result)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
 }
 
 // GetScanLog ...
@@ -1212,7 +1230,7 @@ func (bc *basicController) assembleReports(ctx context.Context, reports ...*scan
 		if report.MimeType == sbomMimeType {
 			// do not update the report from rdb
 			log.Infof("current report content %v", report.Report)
-			continue
+			return nil
 		}
 		completeReport, err := bc.reportConverter.FromRelationalSchema(ctx, report.UUID, report.Digest, report.Report)
 		if err != nil {
