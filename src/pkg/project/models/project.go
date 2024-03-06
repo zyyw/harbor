@@ -147,6 +147,7 @@ func (p *Project) AutoScan() bool {
 	return isTrue(auto)
 }
 
+// AutoGenSBOM ...
 func (p *Project) AutoGenSBOM() bool {
 	auto, exist := p.GetMetadata(ProMetaAutoGenSBOM)
 	if !exist {

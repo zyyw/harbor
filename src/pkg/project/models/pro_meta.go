@@ -24,4 +24,5 @@ const (
 	ProMetaAutoScan                 = "auto_scan"
 	ProMetaAutoGenSBOM              = "auto_gen_sbom"
 	ProMetaReuseSysCVEAllowlist     = "reuse_sys_cve_allowlist"
+	ProMetaAutoSBOMGen              = "auto_sbom_generation"
 )
