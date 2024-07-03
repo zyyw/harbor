@@ -19,36 +19,36 @@ jobs:
           echo "PRE_TAG=$(echo $release | jq -r '.body' | jq -r '.preTag')" >> $GITHUB_ENV
           echo "BRANCH=$(echo $release | jq -r '.target_commitish')" >> $GITHUB_ENV
           echo "PRERELEASE=$(echo $release | jq -r '.prerelease')" >> $GITHUB_ENV
-      - uses: 'google-github-actions/auth@v2'
-        with:
-          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
-      - uses: google-github-actions/setup-gcloud@v1
-        with:
-          version: '430.0.0'
-      - name: Prepare Assets
-        run: |
-          if [ ! ${{ env.BUILD_NO }} -o ${{ env.BUILD_NO }} = "null" ]
-          then
-              echo "missing required parameter buildNo."
-              exit 1
-          fi
-          echo "buildNo:${{ env.BUILD_NO }}"
-          echo "preTag:${{ env.PRE_TAG }}"
-
-          src_offline_package=harbor-offline-installer-${{ env.BASE_TAG }}-${{ env.BUILD_NO }}.tgz
-          src_online_package=harbor-online-installer-${{ env.BASE_TAG }}-${{ env.BUILD_NO }}.tgz
-          dst_offline_package=harbor-offline-installer-${{ env.CUR_TAG }}.tgz
-          dst_online_package=harbor-online-installer-${{ env.CUR_TAG }}.tgz
-          gsutil cp gs://${{ secrets.HARBOR_RELEASE_BUILD }}/${{ env.BRANCH }}/${src_offline_package} gs://${{ secrets.HARBOR_RELEASE_BUILD }}/${{ env.BRANCH }}/${dst_offline_package}
-          gsutil cp gs://${{ secrets.HARBOR_RELEASE_BUILD }}/${{ env.BRANCH }}/${src_offline_package}.asc gs://${{ secrets.HARBOR_RELEASE_BUILD }}/${{ env.BRANCH }}/${dst_offline_package}.asc
-          gsutil cp gs://${{ secrets.HARBOR_RELEASE_BUILD }}/${{ env.BRANCH }}/${src_online_package} gs://${{ secrets.HARBOR_RELEASE_BUILD }}/${{ env.BRANCH }}/${dst_online_package}
-          gsutil cp gs://${{ secrets.HARBOR_RELEASE_BUILD }}/${{ env.BRANCH }}/${src_online_package}.asc gs://${{ secrets.HARBOR_RELEASE_BUILD }}/${{ env.BRANCH }}/${dst_online_package}.asc
-
-          assets_path=$(pwd)/assets
-          source tools/release/release_utils.sh && getAssets ${{ secrets.HARBOR_RELEASE_BUILD }} ${{ env.BRANCH }} $dst_offline_package $dst_online_package ${{ env.PRERELEASE }} $assets_path
-          echo "OFFLINE_PACKAGE_PATH=$assets_path/$dst_offline_package" >> $GITHUB_ENV
-          echo "ONLINE_PACKAGE_PATH=$assets_path/$dst_online_package" >> $GITHUB_ENV
-          echo "MD5SUM_PATH=$assets_path/md5sum" >> $GITHUB_ENV
+#      - uses: 'google-github-actions/auth@v2'
+#        with:
+#          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+#      - uses: google-github-actions/setup-gcloud@v1
+#        with:
+#          version: '430.0.0'
+#      - name: Prepare Assets
+#        run: |
+#          if [ ! ${{ env.BUILD_NO }} -o ${{ env.BUILD_NO }} = "null" ]
+#          then
+#              echo "missing required parameter buildNo."
+#              exit 1
+#          fi
+#          echo "buildNo:${{ env.BUILD_NO }}"
+#          echo "preTag:${{ env.PRE_TAG }}"
+#
+#          src_offline_package=harbor-offline-installer-${{ env.BASE_TAG }}-${{ env.BUILD_NO }}.tgz
+#          src_online_package=harbor-online-installer-${{ env.BASE_TAG }}-${{ env.BUILD_NO }}.tgz
+#          dst_offline_package=harbor-offline-installer-${{ env.CUR_TAG }}.tgz
+#          dst_online_package=harbor-online-installer-${{ env.CUR_TAG }}.tgz
+#          gsutil cp gs://${{ secrets.HARBOR_RELEASE_BUILD }}/${{ env.BRANCH }}/${src_offline_package} gs://${{ secrets.HARBOR_RELEASE_BUILD }}/${{ env.BRANCH }}/${dst_offline_package}
+#          gsutil cp gs://${{ secrets.HARBOR_RELEASE_BUILD }}/${{ env.BRANCH }}/${src_offline_package}.asc gs://${{ secrets.HARBOR_RELEASE_BUILD }}/${{ env.BRANCH }}/${dst_offline_package}.asc
+#          gsutil cp gs://${{ secrets.HARBOR_RELEASE_BUILD }}/${{ env.BRANCH }}/${src_online_package} gs://${{ secrets.HARBOR_RELEASE_BUILD }}/${{ env.BRANCH }}/${dst_online_package}
+#          gsutil cp gs://${{ secrets.HARBOR_RELEASE_BUILD }}/${{ env.BRANCH }}/${src_online_package}.asc gs://${{ secrets.HARBOR_RELEASE_BUILD }}/${{ env.BRANCH }}/${dst_online_package}.asc
+#
+#          assets_path=$(pwd)/assets
+#          source tools/release/release_utils.sh && getAssets ${{ secrets.HARBOR_RELEASE_BUILD }} ${{ env.BRANCH }} $dst_offline_package $dst_online_package ${{ env.PRERELEASE }} $assets_path
+#          echo "OFFLINE_PACKAGE_PATH=$assets_path/$dst_offline_package" >> $GITHUB_ENV
+#          echo "ONLINE_PACKAGE_PATH=$assets_path/$dst_online_package" >> $GITHUB_ENV
+#          echo "MD5SUM_PATH=$assets_path/md5sum" >> $GITHUB_ENV
       - name: Setup Docker
         uses: docker-practice/actions-setup-docker@master
         with:
@@ -56,12 +56,13 @@ jobs:
           docker_channel: stable
       - name: Publish Images
         run: |
-          tar -zxf ${{ env.OFFLINE_PACKAGE_PATH }}
+          wget https://storage.googleapis.com/harbor-releases/release-2.10.0/harbor-offline-installer-v2.10.3-build.2735.tgz
+          tar -zxf ./harbor-offline-installer-v2.10.3-build.2735.tgz
           docker load -i ./harbor/harbor.${{ env.BASE_TAG }}.tar.gz
           images="$(docker images --format "{{.Repository}}" --filter=reference='goharbor/*:${{ env.BASE_TAG }}' | xargs)"
           source tools/release/release_utils.sh
           publishImages ${{ env.CUR_TAG }} ${{ env.BASE_TAG }} "${{ secrets.DOCKER_HUB_USERNAME }}" "${{ secrets.DOCKER_HUB_PASSWORD }}" $images
-          publishPackages ${{ env.CUR_TAG }} ${{ env.BASE_TAG }} ${{ github.actor }} ${{ secrets.GITHUB_TOKEN }} $images
+#          publishPackages ${{ env.CUR_TAG }} ${{ env.BASE_TAG }} ${{ github.actor }} ${{ secrets.GITHUB_TOKEN }} $images
       - name: Generate release notes
         run: |
           release_notes_path=$(pwd)/release-notes.txt
