@@ -17,6 +17,7 @@ cp /notary_ca.crt ~/.docker/tls/$IP:4443/
 mkdir -p ~/.docker/tls/$notaryServerEndpoint/
 cp /notary_ca.crt ~/.docker/tls/$notaryServerEndpoint/
 
+export GODEBUG="x509ignoreCN=0"
 export DOCKER_CONTENT_TRUST=1
 export DOCKER_CONTENT_TRUST_SERVER=https://$notaryServerEndpoint
 
